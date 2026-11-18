@@ -16,6 +16,8 @@ final class AppModel {
     let health: HealthPermission
     /// Tabs, sheets and pushed screens.
     let navigation: AppNavigation
+    /// Records, PRs and the history list, recomputed when the store changes.
+    let history: HistoryModel
     /// Whether the first-launch screens are showing.
     var showsOnboarding: Bool
     /// The first-launch screen to start on (DEBUG demos start later in the flow).
@@ -39,9 +41,13 @@ final class AppModel {
         self.store = store
         self.health = health
         self.navigation = navigation
+        self.history = HistoryModel(container: container)
         self.defaults = defaults
         self.showsOnboarding = showsOnboarding ?? !defaults.bool(forKey: Self.onboardingKey)
         self.onboardingStep = onboardingStep
+        // CloudKit imports (a workout arriving from the Watch) end with a maintenance pass.
+        store.onMaintenance = { [weak history = self.history] in history?.reload() }
+        history.start()
     }
 
     /// Opens the store and starts maintenance, or returns `nil` if no store could be opened.
@@ -86,6 +92,19 @@ enum PlanSheet: Identifiable, Hashable {
     var id: Self { self }
 }
 
+/// Screens pushed on the History and Exercises tabs. Either stack can reach every one of
+/// them (a session's exercise, that exercise's sessions, and so on).
+enum AppDestination: Hashable {
+    /// A finished session.
+    case session(UUID)
+    /// An exercise's records, charts and log.
+    case exercise(UUID)
+    /// An exercise's settings.
+    case exerciseSettings(UUID)
+    /// The most reps an exercise was done for at each weight.
+    case repsByWeight(UUID)
+}
+
 /// Screens pushed on the Settings tab.
 enum SettingsDestination: Hashable {
     /// The default progression step per equipment.
@@ -98,8 +117,12 @@ final class AppNavigation {
     var tab: AppTab = .plan
     /// The sheet over the Plan tab.
     var planSheet: PlanSheet?
-    /// Exercises pushed on the Exercises tab, by id.
-    var exercisePath: [UUID] = []
+    /// Screens pushed on the History tab.
+    var historyPath: [AppDestination] = []
+    /// The History search text, kept while switching tabs.
+    var historySearch = ""
+    /// Screens pushed on the Exercises tab.
+    var exercisePath: [AppDestination] = []
     /// Screens pushed on the Settings tab.
     var settingsPath: [SettingsDestination] = []
     #if DEBUG
@@ -107,10 +130,26 @@ final class AppNavigation {
     var demoReveal: DemoReveal?
     #endif
 
-    init(tab: AppTab = .plan, planSheet: PlanSheet? = nil, exercisePath: [UUID] = [], settingsPath: [SettingsDestination] = []) {
+    init(
+        tab: AppTab = .plan,
+        planSheet: PlanSheet? = nil,
+        historyPath: [AppDestination] = [],
+        exercisePath: [AppDestination] = [],
+        settingsPath: [SettingsDestination] = []
+    ) {
         self.tab = tab
         self.planSheet = planSheet
+        self.historyPath = historyPath
         self.exercisePath = exercisePath
         self.settingsPath = settingsPath
+    }
+
+    /// Pushes `destination` on the stack of the History or Exercises tab, whichever is showing.
+    func push(_ destination: AppDestination) {
+        switch tab {
+        case .history: historyPath.append(destination)
+        case .exercises: exercisePath.append(destination)
+        case .plan, .settings: break
+        }
     }
 }

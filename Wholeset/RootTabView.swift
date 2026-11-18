@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import SwiftData
 import SwiftUI
 import WholesetKit
 
@@ -9,6 +10,8 @@ struct RootTabView: View {
     @Environment(AppModel.self) private var model
     @Environment(AppNavigation.self) private var navigation
     @Environment(\.scenePhase) private var scenePhase
+    /// Oldest first, like Settings: the row that survives a sync merge.
+    @Query(sort: \AppSettings.createdAt) private var settingsRows: [AppSettings]
 
     var body: some View {
         @Bindable var navigation = navigation
@@ -18,12 +21,7 @@ struct RootTabView: View {
                 PlanView()
             }
             Tab("History", systemImage: "clock.arrow.circlepath", value: AppTab.history) {
-                TabPlaceholderView(
-                    title: "History",
-                    systemImage: "clock.arrow.circlepath",
-                    emptyTitle: "No Workouts Yet",
-                    message: "Finished workouts will appear here."
-                )
+                HistoryView()
             }
             Tab("Exercises", systemImage: "dumbbell", value: AppTab.exercises) {
                 ExercisesView()
@@ -32,6 +30,7 @@ struct RootTabView: View {
                 SettingsView()
             }
         }
+        .environment(\.weightUnit, settingsRows.first?.unit ?? .kg)
         .fullScreenCover(isPresented: $model.showsOnboarding) {
             OnboardingView(step: model.onboardingStep)
         }

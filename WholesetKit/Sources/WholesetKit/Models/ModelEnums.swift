@@ -62,6 +62,14 @@ public enum Source: String, PersistedEnum {
     case importHevy
 
     public static var fallback: Source { .watch }
+
+    /// Whether the session came from another app's export rather than being logged here.
+    public var isImported: Bool {
+        switch self {
+        case .watch, .phone: false
+        case .importStrong, .importHevy: true
+        }
+    }
 }
 
 /// The unit used to show and enter weights. Storage is always kilograms.

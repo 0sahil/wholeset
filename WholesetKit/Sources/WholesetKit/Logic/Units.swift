@@ -154,6 +154,20 @@ public enum WeightFormat {
         "\(string(kilograms: kilograms, scale: scale, locale: locale)) \(scale.unit.symbol)"
     }
 
+    /// A weight in `unit` exactly as it is stored, up to two decimals and without grouping
+    /// (e.g. "62.5", "135", "132.28"), for history: unlike ``string(kilograms:scale:showsAllFractionDigits:locale:)``
+    /// it does not snap to the Crown's steps, so a weight typed when editing a past session
+    /// reads back as typed.
+    public static func preciseString(kilograms: Double, unit: WeightUnit, locale: Locale = .current) -> String {
+        let value = DecimalInput.rounded(unit.value(fromKilograms: kilograms), fractionDigits: 2)
+        return DecimalInput.text(value, maximumFractionDigits: 2, locale: locale)
+    }
+
+    /// ``preciseString(kilograms:unit:locale:)`` with the unit label, e.g. "62.5 kg".
+    public static func preciseStringWithUnit(kilograms: Double, unit: WeightUnit, locale: Locale = .current) -> String {
+        "\(preciseString(kilograms: kilograms, unit: unit, locale: locale)) \(unit.symbol)"
+    }
+
     /// A total volume in the scale's unit, rounded to a whole number with grouping (e.g. "6,240").
     public static func volume(kilograms: Double, unit: WeightUnit, locale: Locale = .current) -> String {
         let value = max(0, unit.value(fromKilograms: kilograms)).rounded()

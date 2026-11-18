@@ -9,6 +9,7 @@ import WholesetKit
 struct ExercisesView: View {
     @Environment(AppNavigation.self) private var navigation
     @Environment(StoreCoordinator.self) private var store
+    @Environment(HistoryModel.self) private var history
     @Query private var exercises: [Exercise]
     @State private var filter = ExerciseCatalog.Filter()
     @State private var showsNewExercise = false
@@ -27,8 +28,8 @@ struct ExercisesView: View {
                 ForEach(sections, id: \.group) { section in
                     Section(section.group.label) {
                         ForEach(section.exercises) { exercise in
-                            NavigationLink(value: exercise.id) {
-                                ExerciseRow(exercise: exercise)
+                            NavigationLink(value: AppDestination.exercise(exercise.id)) {
+                                ExerciseRow(exercise: exercise, lastTopSet: history.timeline(forExercise: exercise.id)?.lastTopSet)
                             }
                         }
                     }
@@ -47,13 +48,7 @@ struct ExercisesView: View {
             }
             .searchable(text: $filter.searchText, prompt: Text("Search"))
             .navigationTitle("Exercises")
-            .navigationDestination(for: UUID.self) { id in
-                if let exercise = exercises.first(where: { $0.id == id }) {
-                    ExerciseDetailView(exercise: exercise)
-                } else {
-                    ContentUnavailableView("Exercise Not Found", systemImage: "questionmark")
-                }
-            }
+            .appDestinations()
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button("New Exercise", systemImage: "plus") { showsNewExercise = true }
@@ -80,7 +75,7 @@ struct ExercisesView: View {
             }
             .sheet(isPresented: $showsNewExercise) {
                 NewExerciseView { created in
-                    navigation.exercisePath = [created.id]
+                    navigation.exercisePath = [.exercise(created.id)]
                 }
             }
         }
@@ -109,19 +104,35 @@ struct LibraryWaitingView: View {
     }
 }
 
-/// An exercise in a list: name, equipment, and whether it is custom or archived.
+/// An exercise in a list: name, equipment, whether it is custom or archived, and the last
+/// top set ("62.5 × 10", or "—" if never done).
 private struct ExerciseRow: View {
     let exercise: Exercise
+    let lastTopSet: TopSet?
+    @Environment(\.weightUnit) private var unit
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
+        LabeledContent {
+            Text(lastTopSetText)
+                .monospacedDigit()
+        } label: {
             Text(exercise.name)
                 .foregroundStyle(exercise.isArchived ? .secondary : .primary)
             Text(detail)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
         }
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(exercise.name), \(detail)")
+        .accessibilityValue(spokenTopSet)
+    }
+
+    private var lastTopSetText: String {
+        guard let lastTopSet else { return "—" }
+        return HistoryFormat.compactSet(weightKg: lastTopSet.weightKg, reps: lastTopSet.reps, unit: unit)
+    }
+
+    private var spokenTopSet: String {
+        guard let lastTopSet else { return String(localized: "Never done") }
+        return String(localized: "Last top set \(HistoryFormat.spokenSet(weightKg: lastTopSet.weightKg, reps: lastTopSet.reps, unit: unit))")
     }
 
     private var detail: String {

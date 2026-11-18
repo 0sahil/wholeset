@@ -161,6 +161,22 @@ struct SyncTests {
         #expect(try container.mainContext.fetchCount(FetchDescriptor<Routine>()) == 0)
     }
 
+    /// An import that finished before the coordinator started (what the DEBUG demo records)
+    /// counts: the library is added by the launch pass, with no wait for the patience timer.
+    @MainActor
+    @Test func anImportRecordedBeforeStartAddsTheLibraryAtLaunch() throws {
+        let container = try WholesetStore.makeContainer(inMemory: true)
+        let sync = SyncMonitor(mode: .cloudKit) { .available }
+        sync.record(SyncEvent(id: UUID(), kind: .import, startDate: .now, endDate: .now, succeeded: true))
+        let coordinator = StoreCoordinator(container: container, sync: sync, policy: .manual, patience: .seconds(60))
+        coordinator.start()
+        #expect(!coordinator.isWaitingForFirstImport)
+        #expect(coordinator.patienceWait == nil)
+        let names = Set(try container.mainContext.fetch(FetchDescriptor<Exercise>()).map(\.name))
+        #expect(names.count > 100)
+        #expect(names.isSuperset(of: ["Arnold Press", "Dumbbell Shoulder Press", "Hammer Curl"]))
+    }
+
     @MainActor
     @Test func mergesWaitWhileTheWatchIsInAWorkout() async throws {
         let container = try WholesetStore.makeContainer(inMemory: true)

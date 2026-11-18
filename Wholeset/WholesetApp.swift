@@ -15,6 +15,7 @@ struct WholesetApp: App {
                     .environment(model)
                     .environment(model.store)
                     .environment(model.navigation)
+                    .environment(model.history)
                     .modelContainer(model.container)
             } else {
                 StoreUnavailableView()

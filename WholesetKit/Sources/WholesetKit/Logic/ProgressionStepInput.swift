@@ -6,7 +6,7 @@ import Foundation
 /// the ``ProgressionStepChoices`` fit.
 ///
 /// The text may use a comma or a point as the decimal separator (or the locale's own
-/// separator), and the locale's digits. A valid step is positive, at most
+/// separator), and the locale's digits (see ``DecimalInput``). A valid step is positive, at most
 /// ``maximumKilograms``, and is rounded to ``fractionDigits`` decimals in the display unit
 /// before it is converted to kilograms for storage.
 public enum ProgressionStepInput {
@@ -44,7 +44,7 @@ public enum ProgressionStepInput {
     public static func value(from text: String, unit: WeightUnit, locale: Locale = .current) -> Result<Double, Problem> {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return .failure(.empty) }
-        guard let parsed = parse(trimmed, locale: locale), parsed.isFinite else { return .failure(.notANumber) }
+        guard let parsed = DecimalInput.parse(trimmed, locale: locale), parsed.isFinite else { return .failure(.notANumber) }
         let rounded = round(parsed)
         guard rounded > 0 else { return .failure(.notPositive) }
         guard rounded <= maximumValue(for: unit) else { return .failure(.tooLarge) }
@@ -61,53 +61,10 @@ public enum ProgressionStepInput {
     /// Empty for a missing or invalid step.
     public static func text(kilograms: Double?, unit: WeightUnit, locale: Locale = .current) -> String {
         guard let kilograms, kilograms.isFinite, kilograms > 0 else { return "" }
-        return round(unit.value(fromKilograms: kilograms)).formatted(
-            .number
-                .precision(.fractionLength(0...fractionDigits))
-                .grouping(.never)
-                .locale(locale)
-        )
+        return DecimalInput.text(round(unit.value(fromKilograms: kilograms)), maximumFractionDigits: fractionDigits, locale: locale)
     }
 
     private static func round(_ value: Double) -> Double {
-        let scale = pow(10, Double(fractionDigits))
-        return (value * scale).rounded(.toNearestOrAwayFromZero) / scale
-    }
-
-    /// A decimal number with an optional leading minus, digits of any script and at most one
-    /// separator; `nil` for anything else (grouping, exponents, letters, signs elsewhere).
-    private static func parse(_ text: String, locale: Locale) -> Double? {
-        let separators: Set<Character> = Set([".", ","] + Array(locale.decimalSeparator ?? "."))
-        var sign = ""
-        var integerPart = ""
-        var fractionPart = ""
-        var hasSeparator = false
-        for (index, character) in text.enumerated() {
-            if let digit = decimalDigit(character) {
-                if hasSeparator {
-                    fractionPart.append(String(digit))
-                } else {
-                    integerPart.append(String(digit))
-                }
-            } else if separators.contains(character), !hasSeparator {
-                hasSeparator = true
-            } else if index == 0, character == "-" || character == "\u{2212}" {
-                sign = "-"
-            } else {
-                return nil
-            }
-        }
-        guard !(integerPart.isEmpty && fractionPart.isEmpty) else { return nil }
-        let integer = integerPart.isEmpty ? "0" : integerPart
-        let fraction = fractionPart.isEmpty ? "0" : fractionPart
-        return Double("\(sign)\(integer).\(fraction)")
-    }
-
-    /// The value of a single decimal digit in any script ("5", "٥", "５"), else `nil`.
-    private static func decimalDigit(_ character: Character) -> Int? {
-        guard character.unicodeScalars.count == 1,
-              let scalar = character.unicodeScalars.first,
-              scalar.properties.numericType == .decimal else { return nil }
-        return character.wholeNumberValue
+        DecimalInput.rounded(value, fractionDigits: fractionDigits)
     }
 }

@@ -9,8 +9,9 @@ import WholesetKit
 ///
 /// Launch with `-WholesetDemo <state>`, optionally `-WholesetDemoUnit lb`. The app then
 /// uses an in-memory store with the library, the starter routines, a weekly plan, over a year
-/// of workout history (one of them imported) and a pretend iCloud status. Nothing of this is
-/// compiled into Release builds.
+/// of workout history (one of them imported) and a pretend iCloud status. The `import-…`
+/// states run the import flow on invented export files (``DemoImportFiles``). Nothing of this
+/// is compiled into Release builds.
 enum DemoState: String, CaseIterable {
     case welcome
     case units
@@ -50,6 +51,30 @@ enum DemoState: String, CaseIterable {
     case repsByWeight = "reps-by-weight"
     /// An exercise that was never done.
     case exerciseHistoryEmpty = "exercise-history-empty"
+    /// Import: choose a file, and the apps it reads.
+    case importStart = "import-start"
+    /// Import: how to export from Hevy.
+    case importHow = "import-how"
+    /// Import: a Hevy export read, its unit taken from the header.
+    case importDetected = "import-detected"
+    /// Import: an old Strong export, asking for the unit.
+    case importUnit = "import-unit"
+    /// Import: numeric dates that could be day-first or month-first.
+    case importDateOrder = "import-date-order"
+    /// Import: another app's CSV, matching its columns.
+    case importColumns = "import-columns"
+    /// Import: the names to check (a likely match, other equipment, a custom exercise).
+    case importMatch = "import-match"
+    /// Import: every name with what it becomes.
+    case importMatchAll = "import-match-all"
+    /// Import: workouts being saved.
+    case importProgress = "import-progress"
+    /// Import: done, with workouts skipped, rows not read and routine suggestions.
+    case importDone = "import-done"
+    /// Import: the rows that were not read.
+    case importRowsNotRead = "import-rows-not-read"
+    /// History right after an import.
+    case historyImported = "history-imported"
 }
 
 /// A control the demo harness shows open, beyond what navigation alone can reach.
@@ -189,9 +214,14 @@ enum DemoHarness {
             navigation.tab = .history
             navigation.historyPath = ids.history.latestPush.map { [.session($0)] } ?? []
             navigation.demoReveal = .sessionDeleteConfirmation
+        case .importStart, .importHow, .importDetected, .importUnit, .importDateOrder, .importColumns,
+             .importMatch, .importMatchAll, .importProgress, .importDone, .importRowsNotRead:
+            navigation.tab = .settings
+        case .historyImported:
+            navigation.tab = .history
         }
         context.saveLogged()
-        return AppModel(
+        let model = AppModel(
             container: container,
             store: store,
             navigation: navigation,
@@ -199,6 +229,14 @@ enum DemoHarness {
             showsOnboarding: onboarding != nil,
             onboardingStep: onboarding ?? .welcome
         )
+        if state.rawValue.hasPrefix("import-") || state == .historyImported {
+            let flow = ImportFlowModel(container: container, history: model.history, unit: unit)
+            navigation.importFlow = flow
+            Task {
+                await DemoImportDriver.drive(flow, to: state, container: container, navigation: navigation)
+            }
+        }
+        return model
     }
 
     private struct DemoIDs {

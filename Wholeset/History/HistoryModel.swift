@@ -24,6 +24,9 @@ final class HistoryModel {
     @ObservationIgnored private var needsReload = false
     @ObservationIgnored private var observer: (any NSObjectProtocol)?
     @ObservationIgnored private var generation = 0
+    /// While positive, saves do not rebuild the index (an import saves every batch).
+    @ObservationIgnored private var pauseCount = 0
+    @ObservationIgnored private var changedWhilePaused = false
     @ObservationIgnored private var sectionsCache: SectionsCache?
     private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "app.wholeset", category: "History")
 
@@ -55,6 +58,10 @@ final class HistoryModel {
     /// still launching (a plain `Task` would only start once the main actor is free, after the
     /// first frame). Only applying the finished index waits for the main actor.
     func reload() {
+        guard pauseCount == 0 else {
+            changedWhilePaused = true
+            return
+        }
         guard loading == nil else {
             needsReload = true
             return
@@ -78,6 +85,21 @@ final class HistoryModel {
                 reload()
             }
         }
+    }
+
+    /// Holds rebuilds until ``resumeReloads()``: an import saves many batches and the index is
+    /// rebuilt once, at the end.
+    func pauseReloads() {
+        pauseCount += 1
+    }
+
+    /// Ends a ``pauseReloads()``; rebuilds once if anything was saved meanwhile.
+    func resumeReloads() {
+        guard pauseCount > 0 else { return }
+        pauseCount -= 1
+        guard pauseCount == 0, changedWhilePaused else { return }
+        changedWhilePaused = false
+        reload()
     }
 
     /// Loads the index off the main actor and measures how long that took there.

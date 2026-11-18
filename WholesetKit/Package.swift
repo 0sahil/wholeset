@@ -33,6 +33,8 @@ let package = Package(
         .testTarget(
             name: "WholesetKitTests",
             dependencies: ["WholesetKit"],
+            // Synthetic import fixtures: invented workouts in each export's header layout.
+            resources: [.copy("Fixtures")],
             swiftSettings: swiftSettings
         ),
     ],

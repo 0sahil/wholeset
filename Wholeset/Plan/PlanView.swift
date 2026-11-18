@@ -8,6 +8,7 @@ import WholesetKit
 struct PlanView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(AppNavigation.self) private var navigation
+    @Environment(AppModel.self) private var model
     @Query private var routineRows: [Routine]
     @Query private var planDays: [WeekPlanDay]
     @State private var routinePendingDeletion: Routine?
@@ -20,7 +21,11 @@ struct PlanView: View {
         NavigationStack {
             Group {
                 if routines.isEmpty {
-                    PlanEmptyView(newRoutine: { navigation.planSheet = .newRoutine }, addStarters: addStarters)
+                    PlanEmptyView(
+                        newRoutine: { navigation.planSheet = .newRoutine },
+                        importHistory: { model.beginImport() },
+                        addStarters: addStarters
+                    )
                 } else {
                     planList
                 }
@@ -173,6 +178,7 @@ struct PlanView: View {
 /// Shown until the first routine exists.
 private struct PlanEmptyView: View {
     let newRoutine: () -> Void
+    let importHistory: () -> Void
     let addStarters: () -> Void
 
     var body: some View {
@@ -185,6 +191,13 @@ private struct PlanEmptyView: View {
                 }
                 Button("New Routine", action: newRoutine)
                     .buttonStyle(AccentFillButtonStyle())
+                Button(action: importHistory) {
+                    Text("Import from Another App")
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.large)
+                .accessibilityHint("Brings in your workouts from Strong, Hevy, FitNotes or another app, and offers routines made from them.")
                 Button(action: addStarters) {
                     Text("Start with Push, Pull and Legs")
                         .frame(maxWidth: .infinity, minHeight: 44)

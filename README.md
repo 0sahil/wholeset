@@ -2,7 +2,7 @@
 
 A workout tracker for Apple Watch and iPhone. Log every set from your wrist, sync workouts to Apple Fitness, and keep your full history with no limits.
 
-**Status:** early development. The Watch app runs a workout, logs sets, times rests and saves the workout to Apple Health. The iPhone app plans: routines, a weekly plan, an exercise library and settings, all synced to the Watch through iCloud. History and import are still to come.
+**Status:** early development. The Watch app runs a workout, logs sets, times rests and saves the workout to Apple Health. The iPhone app plans (routines, a weekly plan, an exercise library and settings, all synced to the Watch through iCloud), shows your history with records and charts, and imports workouts exported from Strong, Hevy, FitNotes and other apps.
 
 ## What it is
 
@@ -23,7 +23,7 @@ A workout tracker for Apple Watch and iPhone. Log every set from your wrist, syn
 |---|---|
 | `Wholeset/` | iOS app target |
 | `WholesetWatch/` | watchOS app target (embedded in the iOS app, also runs on its own) |
-| `WholesetKit/` | Swift package with the shared code: versioned SwiftData models and migrations, store setup, sync maintenance and status, the exercise library, and the planning and workout logic |
+| `WholesetKit/` | Swift package with the shared code: versioned SwiftData models and migrations, store setup, sync maintenance and status, the exercise library, the planning and workout logic, and the CSV import (readers, exercise matching, writing) |
 | `Config/` | Build settings as `.xcconfig` files |
 | `Scripts/` | `curate-exercise-library.py`, which builds the bundled exercise library |
 
@@ -55,7 +55,11 @@ Add `-WholesetDemoUnit lb` for pounds. Release builds do not contain this code.
 
 - Watch: `home`, `home-syncing`, `countdown`, `exercise`, `exercise-selected`, `exercise-logged`, `done`, `done-long`, `rest`, `menu`, `stats`,
   `end-confirm`, `summary`, `restored`, `restored-nohealth`.
-- iPhone: `welcome`, `units`, `health`, `plan`, `plan-empty`, `routine-editor`, `exercise-picker`, `exercises`, `exercise-detail`, `settings`.
+- iPhone: `welcome`, `units`, `health`, `plan`, `plan-empty`, `routine-editor`, `exercise-picker`, `exercises`, `exercise-detail`, `settings`,
+  `progression-steps`, `exercise-settings`, `rest-picker`, `custom-step`, `history`, `history-empty`, `history-search`, `session-detail`,
+  `session-edit`, `session-delete-confirm`, `exercise-history`, `exercise-history-volume`, `reps-by-weight`, `exercise-history-empty`,
+  `import-start`, `import-how`, `import-detected`, `import-unit`, `import-date-order`, `import-columns`, `import-match`, `import-match-all`,
+  `import-progress`, `import-done`, `import-rows-not-read`, `history-imported`.
 
 ## Tests
 
@@ -63,6 +67,12 @@ The shared logic lives in `WholesetKit` and is tested with Swift Testing. The te
 
 ```sh
 cd WholesetKit && swift test
+```
+
+Import tests use synthetic files in `WholesetKit/Tests/WholesetKitTests/Fixtures`: invented workouts in each app's header layout. To also run the importer over a folder of real exports you have locally (they are never part of the repository), set `WHOLESET_IMPORT_SAMPLES_DIR` to that folder; the test prints what it read from each `.csv` file:
+
+```sh
+cd WholesetKit && env WHOLESET_IMPORT_SAMPLES_DIR=/path/to/exports swift test --filter ImportSampleFilesTests
 ```
 
 ## License

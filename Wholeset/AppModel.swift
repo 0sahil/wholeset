@@ -70,6 +70,21 @@ final class AppModel {
         defaults.set(true, forKey: Self.onboardingKey)
         showsOnboarding = false
     }
+
+    /// Shows the import flow, reading `url` at once when given (a CSV opened in Wholeset).
+    /// A file opened while an import is being written is ignored; otherwise it replaces the
+    /// file of an import that is showing.
+    func beginImport(opening url: URL? = nil) {
+        if let flow = navigation.importFlow {
+            guard let url, !flow.isWriting, flow.summary == nil else { return }
+            flow.open(url)
+            return
+        }
+        let unit = (try? container.mainContext.fetch(FetchDescriptor<AppSettings>(sortBy: [SortDescriptor(\.createdAt)])).first?.unit) ?? .kg
+        let flow = ImportFlowModel(container: container, history: history, unit: unit)
+        if let url { flow.open(url) }
+        navigation.importFlow = flow
+    }
 }
 
 /// The iPhone app's top-level sections.
@@ -125,6 +140,8 @@ final class AppNavigation {
     var exercisePath: [AppDestination] = []
     /// Screens pushed on the Settings tab.
     var settingsPath: [SettingsDestination] = []
+    /// The import flow, shown as a sheet over every tab.
+    var importFlow: ImportFlowModel?
     #if DEBUG
     /// A control the DEBUG demo harness shows open on the screen it opens.
     var demoReveal: DemoReveal?

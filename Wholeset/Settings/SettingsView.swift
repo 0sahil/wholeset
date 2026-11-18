@@ -5,8 +5,8 @@ import SwiftUI
 import UIKit
 import WholesetKit
 
-/// The Settings tab: units, default rest, progression steps, the Watch's Crown speed, and
-/// the status of Apple Health and iCloud sync.
+/// The Settings tab: units, default rest, progression steps, importing from another app,
+/// the Watch's Crown speed, and the status of Apple Health and iCloud sync.
 struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(AppModel.self) private var model
@@ -45,6 +45,7 @@ private struct SettingsForm: View {
     let sync: SyncMonitor
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(AppModel.self) private var model
 
     var body: some View {
         Form {
@@ -65,6 +66,24 @@ private struct SettingsForm: View {
                 }
             } footer: {
                 Text("Weights are always stored in kilograms; the unit only changes how they're shown and entered. Default rest applies when neither the routine nor the exercise sets one.")
+            }
+
+            Section {
+                Button {
+                    model.beginImport()
+                } label: {
+                    HStack {
+                        Text("Import from Another App")
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(.tertiary)
+                            .accessibilityHidden(true)
+                    }
+                    .listRowButtonLabel()
+                    .contentShape(Rectangle())
+                }
+                .accessibilityHint("Brings in workouts exported from Strong, Hevy, FitNotes and other apps.")
             }
 
             Section {

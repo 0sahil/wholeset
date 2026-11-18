@@ -12,6 +12,8 @@ struct RootTabView: View {
     @Environment(\.scenePhase) private var scenePhase
     /// Oldest first, like Settings: the row that survives a sync merge.
     @Query(sort: \AppSettings.createdAt) private var settingsRows: [AppSettings]
+    /// A CSV opened in Wholeset during the first-launch screens, imported after them.
+    @State private var pendingImport: URL?
 
     var body: some View {
         @Bindable var navigation = navigation
@@ -31,8 +33,25 @@ struct RootTabView: View {
             }
         }
         .environment(\.weightUnit, settingsRows.first?.unit ?? .kg)
+        .sheet(item: $navigation.importFlow) { flow in
+            ImportFlowView(model: flow)
+                .environment(\.weightUnit, settingsRows.first?.unit ?? .kg)
+        }
         .fullScreenCover(isPresented: $model.showsOnboarding) {
             OnboardingView(step: model.onboardingStep)
+        }
+        .onOpenURL { url in
+            // CSV files shared to Wholeset or opened from Files arrive here (as a copy).
+            if model.showsOnboarding {
+                pendingImport = url
+            } else {
+                model.beginImport(opening: url)
+            }
+        }
+        .onChange(of: model.showsOnboarding) { _, showing in
+            guard !showing, let url = pendingImport else { return }
+            pendingImport = nil
+            model.beginImport(opening: url)
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {

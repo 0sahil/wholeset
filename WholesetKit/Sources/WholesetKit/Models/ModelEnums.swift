@@ -55,11 +55,20 @@ public enum Muscle: String, PersistedEnum {
 }
 
 /// Where a session was recorded or imported from.
+///
+/// Stored as its raw value, so adding cases needs no schema change. An app version that
+/// predates a case reads it as ``fallback`` (``watch``).
 public enum Source: String, PersistedEnum {
     case watch
     case phone
     case importStrong
     case importHevy
+    case importFitNotes
+    case importFitbod
+    case importStrongLifts
+    case importLiftosaur
+    /// Any other app's CSV, read with columns the user matched.
+    case importCSV
 
     public static var fallback: Source { .watch }
 
@@ -67,7 +76,7 @@ public enum Source: String, PersistedEnum {
     public var isImported: Bool {
         switch self {
         case .watch, .phone: false
-        case .importStrong, .importHevy: true
+        case .importStrong, .importHevy, .importFitNotes, .importFitbod, .importStrongLifts, .importLiftosaur, .importCSV: true
         }
     }
 }

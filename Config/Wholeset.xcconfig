@@ -26,6 +26,8 @@ INFOPLIST_KEY_LSApplicationCategoryType = public.app-category.healthcare-fitness
 INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES
 INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES
 INFOPLIST_KEY_UILaunchScreen_Generation = YES
+// CSV files opened in Wholeset (Files, the share sheet) arrive as a copy, never in place.
+INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = NO
 INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
 INFOPLIST_KEY_NSHealthShareUsageDescription = Wholeset reads heart rate and active energy from your workouts to show them in your workout history.
 INFOPLIST_KEY_NSHealthUpdateUsageDescription = Wholeset saves your strength workouts to Apple Health, including heart rate and active energy, so they appear in Fitness and count toward your Activity rings.

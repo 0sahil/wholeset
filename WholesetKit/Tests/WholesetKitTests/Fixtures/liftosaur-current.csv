@@ -1,0 +1,3 @@
+Workout DateTime,Program,Day Name,Exercise,Is Warmup Set?,Required Reps,Completed Reps,Is AMRAP?,Required RPE,Completed RPE,Log RPE?,Required Weight Value,Required Weight Unit,Completed Weight Value,Completed Weight Unit,Ask Weight?,Completed Reps Time,Target Muscles,Synergist Muscles,Notes
+2025-08-19T05:30:00.000Z,Basic Beginner,Workout A,Deadlift,0,5,5,0,,8,1,140,kg,142.5,kg,0,,,,"Belt on"
+2025-08-19T05:30:00.000Z,Basic Beginner,Workout A,Deadlift,0,5,4,0,,9,1,140,kg,142.5,kg,0,,,,"Belt on"

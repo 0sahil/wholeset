@@ -45,9 +45,9 @@ struct ExerciseSettingsView: View {
                         Text(alias)
                     }
                 } header: {
-                    Text("Also Known As")
+                    Text("Names in Imports")
                 } footer: {
-                    Text("Used to recognise this exercise in workouts imported from other apps.")
+                    Text("Workouts imported from other apps under these names count as this exercise. Names you match during an import are added here.")
                 }
             }
             if exercise.isCustom {

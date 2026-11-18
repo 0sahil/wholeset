@@ -1,0 +1,8 @@
+title,start_time,end_time,description,exercise_title,superset_id,exercise_notes,set_index,set_type,weight_lbs,reps,distance_miles,duration_seconds,rpe,muscle_group
+Garage Pull,"Sep 9, 2026, 6:30 PM","Sep 9, 2026, 7:25 PM",,Deadlift (Barbell),,,0,normal,225,5,,,,hamstrings
+Garage Push,"Sep 11, 2026, 7:05 AM","Sep 11, 2026, 7:50 AM",,Overhead Press (Barbell),,,0,normal,95,8,,,,shoulders
+Garage Pull,"Sep 9, 2026, 6:30 PM","Sep 9, 2026, 7:25 PM",,Deadlift (Barbell),,,1,normal,245,3,,,,hamstrings
+Garage Pull,"Sep 9, 2026, 6:30 PM","Sep 9, 2026, 7:25 PM",,Bent Over Row (Barbell),,,0,normal,135,8,,,,upper_back
+Garage Push,"Sep 11, 2026, 7:05 AM","Sep 11, 2026, 7:50 AM",,Overhead Press (Barbell),,,1,normal,95,7,,,,shoulders
+Garage Push,"Sep 11, 2026, 7:05 AM","Sep 11, 2026, 7:50 AM",,Farmers Walk,,,0,normal,70,,0.05,,,full_body
+Lunch Walk,"Sep 12, 2026, 12:15 PM","Sep 12, 2026, 12:45 PM",,Walking,,,0,normal,,,1.6,1800,,cardio

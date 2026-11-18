@@ -1,0 +1,6 @@
+Workout DateTime,Program,Day Name,Exercise,Is Warmup Set?,Required Reps,Completed Reps,RPE,Is AMRAP?,Weight Value,Weight Unit,Completed Reps Time,Target Muscles,Synergist Muscles,Notes
+2025-04-01T16:20:05.120Z,My GZCLP,Day 1,Squat,1,5,5,,0,95,lb,,,,
+2025-04-01T16:20:05.120Z,My GZCLP,Day 1,Squat,0,3,3,,0,185,lb,,,,
+2025-04-01T16:20:05.120Z,My GZCLP,Day 1,Squat,0,3,5,,1,185,lb,,,,
+2025-04-01T16:20:05.120Z,My GZCLP,Day 1,Lat Pulldown,0,15,0,,0,100,lb,,,,
+2025-04-03T16:05:44.002Z,My GZCLP,,Bench Press,0,3,3,7.5,0,60,kg,,,,

@@ -51,9 +51,14 @@ struct SessionDetailView: View {
         .task { revealDemoEditor() }
     }
 
-    /// "Mon, 9 Nov 2026 · 18:04 – 19:02".
+    /// "Mon, 9 Nov 2026 · 18:04 – 19:02"; only the date for imports whose file had no time
+    /// (FitNotes, date-only CSVs: they start at midnight and have no end).
     private func subtitle(for session: HistorySession) -> String {
-        "\(HistoryFormat.fullDate(session.startedAt)) · \(HistoryFormat.timeRange(from: session.startedAt, to: session.endedAt))"
+        let time = Calendar.current.dateComponents([.hour, .minute, .second], from: session.startedAt)
+        if session.isImported, session.endedAt <= session.startedAt, time.hour == 0, time.minute == 0, time.second == 0 {
+            return HistoryFormat.fullDate(session.startedAt)
+        }
+        return "\(HistoryFormat.fullDate(session.startedAt)) · \(HistoryFormat.timeRange(from: session.startedAt, to: session.endedAt))"
     }
 
     private func openEditor(confirmsDeletion: Bool = false) {

@@ -1,0 +1,29 @@
+"title","start_time","end_time","description","exercise_title","superset_id","exercise_notes","set_index","set_type","weight_kg","reps","distance_km","duration_seconds","rpe"
+"Upper Power","7 Oct 2026, 18:05","7 Oct 2026, 19:12","Felt strong today","Bench Press (Barbell)",,"Pause on chest",0,"warmup",40,8,,0,
+"Upper Power","7 Oct 2026, 18:05","7 Oct 2026, 19:12","Felt strong today","Bench Press (Barbell)",,"Pause on chest",1,"normal",80,5,,0,8
+"Upper Power","7 Oct 2026, 18:05","7 Oct 2026, 19:12","Felt strong today","Bench Press (Barbell)",,"Pause on chest",2,"normal",80,5,,0,8.5
+"Upper Power","7 Oct 2026, 18:05","7 Oct 2026, 19:12","Felt strong today","Bench Press (Barbell)",,"Pause on chest",3,"failure",80,4,,0,10
+"Upper Power","7 Oct 2026, 18:05","7 Oct 2026, 19:12","Felt strong today","Lat Pulldown (Cable)",2,"",0,"normal",55,10,,,
+"Upper Power","7 Oct 2026, 18:05","7 Oct 2026, 19:12","Felt strong today","Lat Pulldown (Cable)",2,"",1,"normal",55,9,,,
+"Upper Power","7 Oct 2026, 18:05","7 Oct 2026, 19:12","Felt strong today","Lat Pulldown (Cable)",2,"",2,"dropset",40,8,,,
+"Upper Power","7 Oct 2026, 18:05","7 Oct 2026, 19:12","Felt strong today","Pull Up",,"",0,"normal",,8,,,
+"Upper Power","7 Oct 2026, 18:05","7 Oct 2026, 19:12","Felt strong today","Treadmill",,"",0,"normal",,,1.2,600,
+"Lower Volume","3 Oct 2026, 7:40","3 Oct 2026, 8:55","Knee a bit sore
+kept it light","Squat (Barbell)",,"",0,"warmup",60,5,,,
+"Lower Volume","3 Oct 2026, 7:40","3 Oct 2026, 8:55","Knee a bit sore
+kept it light","Squat (Barbell)",,"",1,"normal",100,8,,,
+"Lower Volume","3 Oct 2026, 7:40","3 Oct 2026, 8:55","Knee a bit sore
+kept it light","Squat (Barbell)",,"",2,"normal",100,8,,,
+"Lower Volume","3 Oct 2026, 7:40","3 Oct 2026, 8:55","Knee a bit sore
+kept it light","Squat (Barbell)",,"",3,"normal",100,7,,,
+"Lower Volume","3 Oct 2026, 7:40","3 Oct 2026, 8:55","Knee a bit sore
+kept it light","Romanian Deadlift (Barbell)",,"",0,"normal",90,10,,,
+"Lower Volume","3 Oct 2026, 7:40","3 Oct 2026, 8:55","Knee a bit sore
+kept it light","Romanian Deadlift (Barbell)",,"",1,"normal",90,10,,,
+"Lower Volume","3 Oct 2026, 7:40","3 Oct 2026, 8:55","Knee a bit sore
+kept it light","Plank",,"",0,"normal",,,,60,
+"Upper Power","30 Sep 2026, 18:10","30 Sep 2026, 19:01","","Bench Press (Barbell)",,"",0,"normal",77.5,6,,,
+"Upper Power","30 Sep 2026, 18:10","30 Sep 2026, 19:01","","Bench Press (Barbell)",,"",1,"normal",77.5,6,,,
+"Upper Power","30 Sep 2026, 18:10","30 Sep 2026, 19:01","","Lat Pulldown (Cable)",,"",0,"normal",52.5,10,,,
+"Upper Power","23 Sep 2026, 18:02","23 Sep 2026, 18:58","","Bench Press (Barbell)",,"",0,"normal",75,6,,,
+"Upper Power","23 Sep 2026, 18:02","23 Sep 2026, 18:58","","Lat Pulldown (Cable)",,"",0,"normal",50,10,,,

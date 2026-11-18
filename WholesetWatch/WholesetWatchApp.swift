@@ -6,12 +6,12 @@ import WholesetKit
 
 @main
 struct WholesetWatchApp: App {
-    private let store = WholesetStore.loadAppContainer(cloudKit: WholesetStore.cloudKitEnabledByDefault)
+    @WKApplicationDelegateAdaptor private var appDelegate: AppDelegate
 
     var body: some Scene {
         WindowGroup {
-            if let container = store.container {
-                HomeView()
+            if let container = appDelegate.container, let controller = appDelegate.controller {
+                RootView(controller: controller)
                     .modelContainer(container)
             } else {
                 StoreUnavailableView()

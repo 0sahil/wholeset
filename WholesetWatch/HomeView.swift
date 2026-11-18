@@ -1,48 +1,155 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import SwiftData
 import SwiftUI
+import WholesetKit
 
-/// The Watch home screen. Placeholder layout only: nothing is actionable yet.
+/// The Watch home screen: today's routine (or rest day), other routines, empty workout.
 struct HomeView: View {
+    let controller: WorkoutController
+
+    @Query private var routines: [Routine]
+    @Query private var planDays: [WeekPlanDay]
+
     var body: some View {
+        let today = Date.now
+        let plan = TodayPlanResolver.resolve(planDays: planDays, routines: routines, on: today, calendar: .current)
         NavigationStack {
             List {
-                StartPlaceholder()
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets())
-                Label("Other routine", systemImage: "list.bullet")
-                Label("Empty workout", systemImage: "plus")
+                TodayCard(plan: plan, date: today) { routine in
+                    controller.start(routine)
+                }
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets())
+
+                NavigationLink {
+                    RoutineListView(routines: routines, planDays: planDays) { routine in
+                        controller.start(routine)
+                    }
+                } label: {
+                    Text(plan.startableRoutine == nil ? "Start a routine" : "Other routine")
+                }
+                .disabled(routines.isEmpty)
+
+                EmptyWorkoutRow()
             }
             .navigationTitle {
                 Text("Wholeset")
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(Theme.accent)
             }
             .containerBackground(.black, for: .navigation)
         }
     }
 }
 
-/// The large Start button, shown disabled until routines exist.
-private struct StartPlaceholder: View {
+/// The large card at the top of Home.
+private struct TodayCard: View {
+    let plan: TodayPlan
+    let date: Date
+    let start: (Routine) -> Void
+
     var body: some View {
-        Button {} label: {
-            VStack(spacing: 2) {
-                Text("Start")
+        VStack(alignment: .leading, spacing: 2) {
+            Text(date, format: .dateTime.weekday(.wide))
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+            switch plan {
+            case .planned(let routine), .unplanned(let routine):
+                Text(routine.name)
                     .font(.title3.weight(.semibold))
-                Text("No routine planned")
+                    .lineLimit(2)
+                Text("^[\(exerciseCount(routine)) exercise](inflect: true)")
                     .font(.footnote)
+                    .foregroundStyle(.secondary)
+                Button("Start") { start(routine) }
+                    .buttonStyle(AccentButtonStyle())
+                    .padding(.top, 6)
+                    .accessibilityLabel("Start \(routine.name)")
+            case .restDay(let next):
+                Text("Rest day")
+                    .font(.title3.weight(.semibold))
+                if let next {
+                    Text(nextLabel(next))
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            case .noRoutines:
+                Text("No routines")
+                    .font(.title3.weight(.semibold))
+                Text("Add a routine on iPhone.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 6)
         }
-        .buttonStyle(.borderedProminent)
-        .tint(Color.accentColor)
-        .foregroundStyle(.black)
-        .disabled(true)
-        .accessibilityHint("Available once you add a routine on iPhone.")
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(Theme.tile, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+    }
+
+    private func exerciseCount(_ routine: Routine) -> Int {
+        routine.sortedItems.count { $0.exercise != nil }
+    }
+
+    private func nextLabel(_ next: UpcomingDay) -> String {
+        if next.daysAhead == 1 {
+            return String(localized: "Next: \(next.routine.name), tomorrow")
+        }
+        let symbols = Calendar.current.weekdaySymbols
+        let day = symbols.indices.contains(next.weekday - 1) ? symbols[next.weekday - 1] : ""
+        return String(localized: "Next: \(next.routine.name), \(day)")
     }
 }
 
-#Preview {
-    HomeView()
+/// "Empty workout", shown but unavailable until exercises can be added mid-workout.
+private struct EmptyWorkoutRow: View {
+    var body: some View {
+        Button {} label: {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Empty workout")
+                Text("Coming later: needs adding exercises during a workout.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .disabled(true)
+        .accessibilityHint("Not available yet.")
+    }
+}
+
+/// All routines in list order, with the weekdays each is planned on.
+struct RoutineListView: View {
+    let routines: [Routine]
+    let planDays: [WeekPlanDay]
+    let start: (Routine) -> Void
+
+    var body: some View {
+        List(TodayPlanResolver.sortedRoutines(routines)) { routine in
+            Button {
+                start(routine)
+            } label: {
+                HStack {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(routine.name)
+                            .lineLimit(2)
+                        Text("^[\(routine.sortedItems.count { $0.exercise != nil }) exercise](inflect: true)")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer(minLength: 4)
+                    Text(weekdays(for: routine))
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .accessibilityHint("Starts this routine.")
+        }
+        .navigationTitle("Routines")
+    }
+
+    private func weekdays(for routine: Routine) -> String {
+        let symbols = Calendar.current.shortWeekdaySymbols
+        return TodayPlanResolver.plannedWeekdays(for: routine, in: planDays)
+            .compactMap { symbols.indices.contains($0 - 1) ? symbols[$0 - 1] : nil }
+            .formatted(.list(type: .and, width: .narrow))
+    }
 }

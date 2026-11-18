@@ -52,3 +52,26 @@ struct ElapsedText: View {
         .accessibilityLabel("Elapsed time")
     }
 }
+
+/// The elapsed clock in the top bar of the workout pages, left of the system time: yellow
+/// like the Workout app, with tabular digits. When paused it stops, dims and gets a pause
+/// glyph.
+struct WorkoutClockLabel: View {
+    let clock: WorkoutClock
+
+    var body: some View {
+        HStack(spacing: 2) {
+            if clock.isPaused {
+                Image(systemName: "pause.fill")
+                    .font(.caption2.weight(.bold))
+                    .accessibilityHidden(true)
+            }
+            ElapsedText(clock: clock)
+                .accessibilityLabel(clock.isPaused ? Text("Elapsed time, paused") : Text("Elapsed time"))
+        }
+        .font(Theme.number(.body))
+        .foregroundStyle(Theme.elapsed.opacity(clock.isPaused ? 0.6 : 1))
+        .lineLimit(1)
+        .fixedSize()
+    }
+}

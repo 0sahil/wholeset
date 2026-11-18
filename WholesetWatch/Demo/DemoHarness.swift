@@ -15,7 +15,11 @@ enum DemoScreen: String, CaseIterable {
     case countdown
     case exercise
     case exerciseSelected = "exercise-selected"
+    /// Set 3 of 3 with two sets logged, for the logged-sets table on the exercise page.
+    case exerciseLogged = "exercise-logged"
     case done
+    /// A warm-up and four working sets logged: the done page's table scrolls.
+    case doneLong = "done-long"
     case rest
     case menu
     case stats
@@ -115,6 +119,13 @@ enum DemoHarness {
             try engine.logCurrentSet()
         }
 
+        if screen == .doneLong {
+            // An empty-bar warm-up first, plus two extra working sets (five sets in all).
+            try engine.toggleWarmupOnCurrentSet()
+            try log(unit == .kg ? 20 : WeightUnit.lb.kilograms(fromValue: 45), 10)
+            try engine.addSet()
+            try engine.addSet()
+        }
         try log(bar, 10)
         var rest: RestTimer?
         var phase = WorkoutController.Phase.active
@@ -122,9 +133,15 @@ enum DemoHarness {
         case .exerciseSelected:
             engine.setCurrentWeight(unit == .kg ? 62.5 : WeightUnit.lb.kilograms(fromValue: 140))
             controller.initialTileSelection = .weight
+        case .exerciseLogged:
+            try log(bar, 10)
         case .done:
             try log(bar, 10)
             try log(bar, 9)
+        case .doneLong:
+            try log(bar, 10)
+            try log(bar, 9)
+            try log(bar, 8)
         case .rest:
             rest = RestTimer.start(duration: 150, now: .now.addingTimeInterval(-40))
         case .menu:

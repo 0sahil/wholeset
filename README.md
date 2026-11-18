@@ -50,7 +50,7 @@ Simulator builds use a local store; CloudKit sync is only enabled on device buil
 
 To look at a Watch screen without running a workout, launch the Watch app with `-WholesetDemo <screen>`.
 It then opens straight into that screen with an in-memory store, sample data and a fake HealthKit manager.
-Screens: `home`, `countdown`, `exercise`, `exercise-selected`, `done`, `rest`, `menu`, `stats`, `end-confirm`,
+Screens: `home`, `countdown`, `exercise`, `exercise-selected`, `exercise-logged`, `done`, `done-long`, `rest`, `menu`, `stats`, `end-confirm`,
 `summary`, `restored`, `restored-nohealth`. Add `-WholesetDemoUnit lb` for pounds. Release builds do not contain this code.
 
 ## Tests

@@ -3,29 +3,38 @@
 import SwiftUI
 import WholesetKit
 
-/// The current set of an exercise: two big tiles (weight, reps), the set dots, and the
-/// ••• + "Log set N" row at the bottom where the thumb lands.
+/// The current set of an exercise: the exercise name, the set dots, two big tiles (weight,
+/// reps), the sets already logged when there is room, and the ••• + "Log set N" row at the
+/// bottom where the thumb lands. The elapsed clock is in the top bar.
 struct ExercisePage: View {
     let controller: WorkoutController
     let engine: WorkoutEngine
     let entry: SessionExercise
     let set: SetLog
     let selection: ValueTile?
+    /// The Crown edit to show on the weight tile instead of the stored weight.
+    let weightEdit: CrownEdit?
+    /// The Crown edit to show on the reps tile instead of the stored reps.
+    let repsEdit: CrownEdit?
     let toggle: (ValueTile) -> Void
     let adjust: (ValueTile, Int) -> Void
     let openMenu: () -> Void
     let log: () -> Void
 
     var body: some View {
-        let values = engine.values(for: set)
+        let stored = engine.values(for: set)
+        let scale = controller.scale
+        let weightKg = weightEdit.map { scale.kilograms(forSteps: $0.value) } ?? stored.weightKg
+        let reps = repsEdit?.value ?? stored.reps
+        let sets = entry.sortedSets
         let statuses = engine.statuses(of: entry)
-        let number = (statuses.firstIndex { $0.id == set.id } ?? 0) + 1
+        let number = (sets.firstIndex { $0.id == set.id } ?? 0) + 1
+        let loggedRows = LoggedSetRow.rows(for: sets)
+        // Both tiles size their number for the widest weight, so neither changes size while
+        // stepping and the two numbers always match.
+        let sizingTemplate = WeightFormat.widestString(scale: scale)
         VStack(alignment: .leading, spacing: 4) {
-            ScreenHeader(title: entry.exercise?.name ?? "") {
-                if let clock = controller.clock {
-                    ElapsedText(clock: clock)
-                }
-            }
+            ScreenHeader(title: entry.exercise?.name ?? "")
             SetLine(
                 label: set.isWarmup
                     ? String(localized: "Warm-up · set \(number) of \(statuses.count)")
@@ -34,27 +43,46 @@ struct ExercisePage: View {
             )
             HStack(spacing: 5) {
                 ValueTileView(
-                    value: weightText(values.weightKg),
+                    // While selected, all fraction digits ("62.0", "62.5"): no character
+                    // appears or disappears between detents.
+                    value: weightKg.map {
+                        WeightFormat.string(kilograms: $0, scale: scale, showsAllFractionDigits: selection == .weight)
+                    } ?? "–",
+                    sizingTemplate: sizingTemplate,
                     unitLabel: controller.unit.symbol,
                     isSelected: selection == .weight,
                     accessibilityName: String(localized: "Weight"),
-                    accessibilityValue: weightAccessibilityValue(values.weightKg),
+                    accessibilityValue: weightKg.map { SpokenWeight.string(kilograms: $0, scale: scale) } ?? String(localized: "Not set"),
                     onTap: { toggle(.weight) },
                     onLongPress: openMenu,
                     adjust: { adjust(.weight, $0) }
                 )
                 ValueTileView(
-                    value: values.reps.map { "\($0)" } ?? "–",
+                    value: reps.map { "\($0)" } ?? "–",
+                    sizingTemplate: sizingTemplate,
                     unitLabel: String(localized: "reps"),
                     isSelected: selection == .reps,
                     accessibilityName: String(localized: "Reps"),
-                    accessibilityValue: values.reps.map { inflectedString("^[\($0) rep](inflect: true)") } ?? String(localized: "Not set"),
+                    accessibilityValue: reps.map { inflectedString("^[\($0) rep](inflect: true)") } ?? String(localized: "Not set"),
                     onTap: { toggle(.reps) },
                     onLongPress: openMenu,
                     adjust: { adjust(.reps, $0) }
                 )
             }
-            Spacer(minLength: 2)
+            // The sets logged so far, only when every row fits above the buttons: Log never
+            // moves down for it (on a 40 mm watch it usually shows on the done page only).
+            if loggedRows.isEmpty {
+                Spacer(minLength: 2)
+            } else {
+                ViewThatFits(in: .vertical) {
+                    VStack(spacing: 0) {
+                        LoggedSetTable(rows: loggedRows, scale: scale)
+                            .padding(.top, 2)
+                        Spacer(minLength: 2)
+                    }
+                    Spacer(minLength: 2)
+                }
+            }
             HStack(spacing: 6) {
                 MoreButton(action: openMenu)
                 Button(action: log) {
@@ -65,85 +93,156 @@ struct ExercisePage: View {
             }
         }
     }
-
-    private func weightText(_ kilograms: Double?) -> String {
-        kilograms.map { WeightFormat.string(kilograms: $0, scale: controller.scale) } ?? "–"
-    }
-
-    private func weightAccessibilityValue(_ kilograms: Double?) -> String {
-        guard let kilograms else { return String(localized: "Not set") }
-        let scale = controller.scale
-        let unit: UnitMass = scale.unit == .kg ? .kilograms : .pounds
-        return Measurement(value: scale.displayValue(forKilograms: kilograms), unit: unit)
-            .formatted(.measurement(width: .wide, numberFormatStyle: .number.precision(.fractionLength(0...scale.fractionDigits))))
-    }
 }
 
-/// "Done · 3 of 3 sets": shown after the last set of an exercise, with a button to the
-/// next unfinished exercise. Never jumps there by itself.
+/// "Done · 3 of 3 sets": shown after the last set of an exercise, with the table of its
+/// logged sets and a button to the next unfinished exercise. Never jumps there by itself.
+///
+/// When the header, every row and the "Next: …" line fit above the ••• / Next row, the page
+/// is static and the Crown keeps moving between exercises. Otherwise that content scrolls
+/// (Crown and touch) while the ••• / Next row stays pinned at the bottom.
 struct ExerciseDonePage: View {
     let controller: WorkoutController
     let engine: WorkoutEngine
     let entry: SessionExercise
+    /// Focus for the scrolling layout, so the Crown scrolls it.
+    let crownFocus: CrownFocus
+    /// The page's Crown, used by the static layout only.
+    let pageCrown: PageCrown
     let openMenu: () -> Void
 
     var body: some View {
-        let statuses = engine.statuses(of: entry)
-        let progress = engine.progress(of: entry)
-        let next = engine.nextUnfinishedEntry(after: entry)
-        VStack(alignment: .leading, spacing: 4) {
-            ScreenHeader(title: entry.exercise?.name ?? "") {
-                if let clock = controller.clock {
-                    ElapsedText(clock: clock)
-                }
+        let next = nextEntry
+        ViewThatFits(in: .vertical) {
+            VStack(alignment: .leading, spacing: 0) {
+                summary(next: next)
+                Spacer(minLength: 4)
+                actions(next: next)
             }
-            SetLine(label: String(localized: "Done · \(progress.completed) of \(progress.total) sets"), statuses: statuses)
-            Text(loggedSummary)
-                .font(.footnote.monospacedDigit())
-                .foregroundStyle(.secondary)
-                .lineLimit(3)
-                .minimumScaleFactor(0.7)
-            Spacer(minLength: 2)
-            let nextIndex = next.flatMap { next in engine.entries.firstIndex { $0 === next } }
-            let nextName = next?.exercise?.name ?? ""
-            if nextIndex != nil {
-                // The full name sits above the row so the button label can stay short.
-                Text("Next: \(nextName)")
-                    .font(.footnote.weight(.medium))
-                    .lineLimit(3)
-                    .minimumScaleFactor(0.8)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .layoutPriority(1)
-                    .accessibilityHidden(true)
+            .modifier(pageCrown)
+
+            ScrollView {
+                summary(next: next)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
-            HStack(spacing: 6) {
-                MoreButton(action: openMenu)
-                if let nextIndex {
-                    Button("Next") {
-                        controller.selectEntry(at: nextIndex)
-                    }
-                    .buttonStyle(AccentButtonStyle())
-                    .accessibilityLabel("Next: \(nextName)")
-                } else {
-                    Button("End workout") {
-                        controller.sheet = .endConfirm
-                    }
-                    .buttonStyle(AccentButtonStyle())
-                }
+            .claimsCrown(.doneTable, with: crownFocus)
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                // Opaque, so rows scrolled under the buttons do not show through.
+                actions(next: next)
+                    .padding(.top, 4)
+                    .background(.black)
             }
         }
     }
 
-    /// "60 × 10 · 60 × 10 · 60 × 9".
-    private var loggedSummary: String {
-        entry.sortedSets
-            .filter { $0.completedAt != nil }
-            .map { set in
-                let reps = set.reps.map { "\($0)" } ?? "–"
-                guard let weight = set.weightKg else { return String(localized: "\(reps) reps") }
-                return "\(WeightFormat.string(kilograms: weight, scale: controller.scale)) × \(reps)"
+    /// The next unfinished exercise and its index, if any.
+    private var nextEntry: (index: Int, name: String)? {
+        guard let next = engine.nextUnfinishedEntry(after: entry),
+              let index = engine.entries.firstIndex(where: { $0 === next }) else { return nil }
+        return (index, next.exercise?.name ?? "")
+    }
+
+    /// Name, "Done · 3 of 3 sets", the logged sets and "Next: …".
+    private func summary(next: (index: Int, name: String)?) -> some View {
+        let progress = engine.progress(of: entry)
+        return VStack(alignment: .leading, spacing: 3) {
+            ScreenHeader(title: entry.exercise?.name ?? "")
+            SetLine(
+                label: String(localized: "Done · \(progress.completed) of \(progress.total) sets"),
+                statuses: engine.statuses(of: entry)
+            )
+            LoggedSetTable(rows: LoggedSetRow.rows(for: entry.sortedSets), scale: controller.scale)
+            if let next {
+                // The full name sits here so the button label can stay short.
+                Text("Next: \(next.name)")
+                    .font(.footnote.weight(.medium))
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.8)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityHidden(true)
             }
-            .joined(separator: " · ")
+        }
+    }
+
+    /// ••• and Next (or End workout after the last exercise).
+    private func actions(next: (index: Int, name: String)?) -> some View {
+        HStack(spacing: 6) {
+            MoreButton(action: openMenu)
+            if let next {
+                Button("Next") {
+                    controller.selectEntry(at: next.index)
+                }
+                .buttonStyle(AccentButtonStyle())
+                .accessibilityLabel("Next: \(next.name)")
+            } else {
+                Button("End workout") {
+                    controller.sheet = .endConfirm
+                }
+                .buttonStyle(AccentButtonStyle())
+            }
+        }
+    }
+}
+
+/// The logged sets of an exercise, one row each: the set number on the left ("W" for a
+/// warm-up, whose row is drawn secondary), "60 kg × 10" on the right, thin rules between.
+struct LoggedSetTable: View {
+    let rows: [LoggedSetRow]
+    let scale: WeightScale
+
+    var body: some View {
+        VStack(spacing: 0) {
+            ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
+                if index > 0 {
+                    Rectangle()
+                        .fill(Theme.idleDot)
+                        .frame(height: 0.5)
+                        .accessibilityHidden(true)
+                }
+                LoggedSetRowView(row: row, scale: scale)
+            }
+        }
+    }
+}
+
+private struct LoggedSetRowView: View {
+    let row: LoggedSetRow
+    let scale: WeightScale
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            Text(row.isWarmup ? String(localized: "W", comment: "Warm-up set, in the logged-sets table") : "\(row.number)")
+                .frame(minWidth: 14, alignment: .leading)
+                .foregroundStyle(.secondary)
+            Spacer(minLength: 0)
+            Text(row.valueText(scale: scale))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+        }
+        .font(.footnote.monospacedDigit())
+        .foregroundStyle(row.isWarmup ? .secondary : .primary)
+        // No vertical padding: the line height leaves room above and below the rules.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(spokenRow)
+    }
+
+    /// "Set 2, 60 kilograms, 10 reps"; "Warm-up, 20 kilograms, 10 reps".
+    private var spokenRow: String {
+        var parts = [row.isWarmup ? String(localized: "Warm-up") : String(localized: "Set \(row.number)")]
+        if let weight = row.weightKg {
+            parts.append(SpokenWeight.string(kilograms: weight, scale: scale))
+        }
+        parts.append(row.reps.map { inflectedString("^[\($0) rep](inflect: true)") } ?? String(localized: "reps not recorded"))
+        return parts.formatted(.list(type: .and, width: .narrow))
+    }
+}
+
+/// A weight as VoiceOver should say it, e.g. "60 kilograms".
+enum SpokenWeight {
+    static func string(kilograms: Double, scale: WeightScale) -> String {
+        let unit: UnitMass = scale.unit == .kg ? .kilograms : .pounds
+        return Measurement(value: scale.displayValue(forKilograms: kilograms), unit: unit)
+            .formatted(.measurement(width: .wide, numberFormatStyle: .number.precision(.fractionLength(0...scale.fractionDigits))))
     }
 }
 
@@ -196,6 +295,8 @@ struct SetDots: View {
 /// A weight or reps tile. Tap to select (accent outline) or release; long-press opens the menu.
 struct ValueTileView: View {
     let value: String
+    /// The widest text `value` can become (e.g. "888.8"); the number is laid out at its width.
+    let sizingTemplate: String
     let unitLabel: String
     let isSelected: Bool
     let accessibilityName: String
@@ -208,10 +309,11 @@ struct ValueTileView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(value)
+            Text(paddedValue)
                 .font(Theme.number(.title))
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
+                .contentTransition(.identity)
             Text(unitLabel)
                 .font(.footnote.weight(.medium))
                 .foregroundStyle(.secondary)
@@ -248,6 +350,17 @@ struct ValueTileView: View {
             @unknown default: break
             }
         }
+    }
+
+    /// `value` followed by invisible characters that make it as wide as `sizingTemplate`
+    /// (digits are tabular), so shrink-to-fit picks one font size for every value instead
+    /// of jumping between e.g. "100" and "100.5".
+    private var paddedValue: AttributedString {
+        var text = AttributedString(value)
+        var filler = AttributedString(StableNumberWidth.filler(for: value, toMatch: sizingTemplate))
+        filler.foregroundColor = .clear
+        text.append(filler)
+        return text
     }
 }
 

@@ -12,7 +12,7 @@ enum Theme {
     static let control = Color(red: 35 / 255, green: 35 / 255, blue: 37 / 255)
     /// Unlogged-set dot (#3A3A3C).
     static let idleDot = Color(red: 58 / 255, green: 58 / 255, blue: 60 / 255)
-    /// Elapsed-time figure on the Stats page (#FFD60A).
+    /// The elapsed workout clock in the top bar (#FFD60A).
     static let elapsed = Color(red: 1, green: 214 / 255, blue: 10 / 255)
     /// Destructive text (#FF453A).
     static let destructive = Color(red: 1, green: 69 / 255, blue: 58 / 255)
@@ -64,7 +64,7 @@ struct SecondaryButtonStyle: ButtonStyle {
     }
 }
 
-/// A screen title in the accent colour with an optional trailing accessory (the elapsed clock).
+/// A screen title in the accent colour, up to two lines, with an optional trailing accessory.
 struct ScreenHeader<Trailing: View>: View {
     let title: String
     @ViewBuilder var trailing: Trailing
@@ -76,6 +76,8 @@ struct ScreenHeader<Trailing: View>: View {
                 .foregroundStyle(Theme.accent)
                 .lineLimit(2)
                 .minimumScaleFactor(0.75)
+                // Takes the height of both lines before anything below gets squeezed.
+                .fixedSize(horizontal: false, vertical: true)
                 .accessibilityAddTraits(.isHeader)
             Spacer(minLength: 2)
             trailing

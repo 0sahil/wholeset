@@ -4,10 +4,10 @@ import SwiftUI
 import WholesetKit
 
 /// The rest countdown with +30 s and Skip. Shown in place of the exercise page while
-/// resting; when the rest ends the current set is back on screen.
+/// resting; when the rest ends the current set is back on screen. The elapsed workout clock
+/// is in the top bar.
 struct RestView: View {
     let rest: RestTimer
-    let clock: WorkoutClock?
     let extend: () -> Void
     let skip: () -> Void
 
@@ -15,11 +15,7 @@ struct RestView: View {
 
     var body: some View {
         VStack(spacing: 2) {
-            ScreenHeader(title: String(localized: "Rest")) {
-                if let clock {
-                    ElapsedText(clock: clock)
-                }
-            }
+            ScreenHeader(title: String(localized: "Rest"))
             TimelineView(.periodic(from: rest.startedAt, by: isLuminanceReduced ? 60 : 1)) { context in
                 let remaining = rest.remaining(at: context.date)
                 RestRing(

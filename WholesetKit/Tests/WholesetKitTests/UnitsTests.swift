@@ -43,6 +43,29 @@ struct UnitsTests {
         #expect(text == "62,5")
     }
 
+    @Test(arguments: [
+        (60.0, WeightUnit.kg, "60.0"),
+        (62.5, .kg, "62.5"),
+        (0, .kg, "0.0"),
+        (61.2, .lb, "135"),
+    ])
+    func allFractionDigitsKeepTheTrailingZero(kilograms: Double, unit: WeightUnit, expected: String) {
+        let text = WeightFormat.string(kilograms: kilograms, scale: WeightScale(unit: unit), showsAllFractionDigits: true, locale: posix)
+        #expect(text == expected)
+    }
+
+    /// While stepping with all fraction digits, every kg value has the same characters in
+    /// the same places, so no character appears or disappears between detents.
+    @Test func allFractionDigitsKeepTheShapeWhileStepping() {
+        let scale = WeightScale(unit: .kg)
+        // 50.0 kg through 99.5 kg.
+        let shapes = Set((100...199).map { steps in
+            WeightFormat.string(kilograms: scale.kilograms(forSteps: steps), scale: scale, showsAllFractionDigits: true, locale: posix)
+                .map { $0.isWholeNumber ? "8" : $0 }
+        })
+        #expect(shapes == [Array("88.8")])
+    }
+
     @Test func stringWithUnitAddsSymbol() {
         #expect(WeightFormat.stringWithUnit(kilograms: 62.5, scale: WeightScale(unit: .kg), locale: posix) == "62.5 kg")
     }

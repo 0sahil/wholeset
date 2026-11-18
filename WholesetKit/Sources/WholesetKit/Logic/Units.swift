@@ -106,12 +106,44 @@ public enum WeightFormat {
     /// - Parameters:
     ///   - kilograms: The stored weight.
     ///   - scale: The display unit and step.
+    ///   - showsAllFractionDigits: Always show the scale's fraction digits ("62.0", "62.5"),
+    ///     so the characters on screen stay put while a value is being stepped.
     ///   - locale: Controls the decimal separator.
-    public static func string(kilograms: Double, scale: WeightScale, locale: Locale = .current) -> String {
+    public static func string(
+        kilograms: Double,
+        scale: WeightScale,
+        showsAllFractionDigits: Bool = false,
+        locale: Locale = .current
+    ) -> String {
         let value = scale.displayValue(forKilograms: kilograms)
+        let digits = scale.fractionDigits
         return value.formatted(
             .number
-                .precision(.fractionLength(0...scale.fractionDigits))
+                .precision(.fractionLength((showsAllFractionDigits ? digits : 0)...digits))
+                .grouping(.never)
+                .locale(locale)
+        )
+    }
+
+    /// A string at least as wide, in tabular digits, as any weight the scale can show:
+    /// as many integer digits as the heaviest step and the scale's fraction digits, every
+    /// digit an "8" (e.g. "888.8" for 0.5 kg steps, "8888" for 1 lb steps). For reserving
+    /// layout width, never for display.
+    ///
+    /// - Parameters:
+    ///   - scale: The display unit and step.
+    ///   - locale: Controls the decimal separator and digits.
+    public static func widestString(scale: WeightScale, locale: Locale = .current) -> String {
+        let heaviest = Double(scale.maximumSteps) * scale.step
+        let integerDigits = max(1, String(Int(heaviest.rounded(.down))).count)
+        let fractionDigits = scale.fractionDigits
+        let integerPart = Double(String(repeating: "8", count: integerDigits)) ?? 8
+        let fractionPart = fractionDigits > 0
+            ? (Double("0." + String(repeating: "8", count: fractionDigits)) ?? 0)
+            : 0
+        return (integerPart + fractionPart).formatted(
+            .number
+                .precision(.fractionLength(fractionDigits))
                 .grouping(.never)
                 .locale(locale)
         )

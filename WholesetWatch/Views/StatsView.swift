@@ -3,8 +3,8 @@
 import SwiftUI
 import WholesetKit
 
-/// The page to the right of the exercise: elapsed time, heart rate, active energy,
-/// volume so far, and Pause/Resume and End.
+/// The page to the right of the exercise: heart rate, active energy, volume so far, and
+/// Pause/Resume and End. The elapsed time is in the top bar, as on the exercise page.
 struct StatsView: View {
     let controller: WorkoutController
 
@@ -28,11 +28,6 @@ struct StatsView: View {
                 } else if controller.isPaused {
                     Text("Paused")
                 }
-            }
-            if let clock = controller.clock {
-                ElapsedText(clock: clock)
-                    .font(Theme.number(.title2))
-                    .foregroundStyle(Theme.elapsed)
             }
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: 10) {

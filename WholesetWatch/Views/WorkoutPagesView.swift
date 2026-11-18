@@ -4,20 +4,34 @@ import SwiftUI
 import WholesetKit
 
 /// The running workout: the exercise page and the Stats page side by side (swipe
-/// horizontally), plus the ••• menu and the End confirmation as sheets.
+/// horizontally), the elapsed clock in the top bar of both, plus the ••• menu and the End
+/// confirmation as sheets.
 struct WorkoutPagesView: View {
     @Bindable var controller: WorkoutController
+    /// Counts sheets that finished closing, so the exercise page can take the Crown back.
+    @State private var sheetDismissals = 0
 
     var body: some View {
-        TabView(selection: $controller.page) {
-            ExerciseTab(controller: controller)
-                .tag(WorkoutPage.exercise)
-            StatsView(controller: controller)
-                .tag(WorkoutPage.stats)
+        NavigationStack {
+            TabView(selection: $controller.page) {
+                ExerciseTab(controller: controller, sheetDismissals: sheetDismissals)
+                    .tag(WorkoutPage.exercise)
+                StatsView(controller: controller)
+                    .tag(WorkoutPage.stats)
+            }
+            .tabViewStyle(.page)
+            .containerBackground(.black, for: .tabView)
+            // On the TabView rather than on each page, so the clock stays put while swiping.
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    if let clock = controller.clock {
+                        WorkoutClockLabel(clock: clock)
+                    }
+                }
+            }
         }
-        .tabViewStyle(.page)
-        .containerBackground(.black, for: .tabView)
-        .sheet(item: $controller.sheet) { sheet in
+        .containerBackground(.black, for: .navigation)
+        .sheet(item: $controller.sheet, onDismiss: { sheetDismissals += 1 }) { sheet in
             switch sheet {
             case .menu:
                 WorkoutMenuView(controller: controller)
@@ -28,29 +42,98 @@ struct WorkoutPagesView: View {
     }
 }
 
+/// Which view on the exercise page gets the Digital Crown.
+enum CrownTarget: Hashable {
+    /// The page itself: edits the selected tile, or moves between exercises.
+    case page
+    /// The scrolling done page: the Crown scrolls it.
+    case doneTable
+}
+
+/// When the exercise page's Crown target takes focus: each time it appears, and each time
+/// this value changes while ``isEligible``.
+struct CrownClaim: Equatable {
+    /// The app is active, the exercise page is the one showing and no sheet is up.
+    var isEligible: Bool
+    /// Counts sheets that finished closing: a sheet takes focus and does not give it back.
+    var sheetDismissals: Int
+}
+
+/// What a Crown target needs to take focus.
+struct CrownFocus {
+    let binding: FocusState<CrownTarget?>.Binding
+    /// The exercise page's focus scope, in which the target prefers default focus.
+    let scope: Namespace.ID
+    let claim: CrownClaim
+}
+
+extension View {
+    /// Makes this view the Crown's `target`. It takes focus from its own `task`, so only
+    /// once it is in the hierarchy (an assignment made earlier is dropped), and it is the
+    /// scope's default focus whenever the system picks one.
+    func claimsCrown(_ target: CrownTarget, with focus: CrownFocus) -> some View {
+        self
+            .focused(focus.binding, equals: target)
+            .prefersDefaultFocus(in: focus.scope)
+            .task(id: focus.claim) {
+                guard focus.claim.isEligible else { return }
+                focus.binding.wrappedValue = target
+            }
+    }
+}
+
+/// The exercise page's own Crown: edits the selected tile, or moves between exercises.
+/// Applied to the set page and the static done page only. The scrolling done page has no
+/// such ancestor, so nothing competes with its ScrollView for the Crown.
+struct PageCrown: ViewModifier {
+    let binding: Binding<Int>
+    let range: ClosedRange<Int>
+    let sensitivity: DigitalCrownRotationalSensitivity
+    let onIdle: () -> Void
+    let focus: CrownFocus
+
+    func body(content: Content) -> some View {
+        content
+            .focusable()
+            .claimsCrown(.page, with: focus)
+            .focusEffectDisabled()
+            .digitalCrownRotation(
+                detent: binding,
+                from: range.lowerBound,
+                through: range.upperBound,
+                by: 1,
+                sensitivity: sensitivity,
+                isContinuous: false,
+                isHapticFeedbackEnabled: true,
+                onIdle: onIdle
+            )
+    }
+}
+
 /// The exercise page: rest countdown while resting, otherwise the current set (or the
-/// exercise's "done" state). Owns the Digital Crown: with a tile selected it edits that
-/// value, with none it moves between exercises.
+/// exercise's "done" state). With a tile selected the Crown edits that value, with none it
+/// moves between exercises, except on a done page too tall for the screen, where it
+/// scrolls that page instead.
 private struct ExerciseTab: View {
     let controller: WorkoutController
+    /// Counts sheets that finished closing.
+    let sheetDismissals: Int
 
-    @State private var selection: ValueTile?
-    @State private var interactions = 0
-    @FocusState private var crownFocused: Bool
+    @State private var editor: TileEditor
+    @FocusState private var crownFocus: CrownTarget?
+    @Namespace private var crownScope
+    @Environment(\.scenePhase) private var scenePhase
 
-    /// Seconds of no input after which a selected tile is released.
-    private static let idleRelease: Duration = .seconds(4)
-    private static let maxReps = 100
+    init(controller: WorkoutController, sheetDismissals: Int) {
+        self.controller = controller
+        self.sheetDismissals = sheetDismissals
+        _editor = State(initialValue: TileEditor(controller: controller))
+    }
 
     var body: some View {
         Group {
             if let rest = controller.rest {
-                RestView(
-                    rest: rest,
-                    clock: controller.clock,
-                    extend: controller.extendRest,
-                    skip: controller.skipRest
-                )
+                RestView(rest: rest, extend: controller.extendRest, skip: controller.skipRest)
             } else if let engine = controller.engine, let entry = engine.currentEntry {
                 crownHost(engine: engine, entry: entry)
             } else {
@@ -58,20 +141,33 @@ private struct ExerciseTab: View {
                     .foregroundStyle(.secondary)
             }
         }
+        .focusScope(crownScope)
         .onAppear(perform: applyInitialSelection)
-        .onDisappear(perform: release)
-        .onChange(of: controller.rest != nil) { _, resting in
-            if !resting { crownFocused = true }
+        .onDisappear(perform: editor.release)
+        .onChange(of: controller.page) { _, _ in
+            editor.release()
         }
-        .onChange(of: controller.sheet == nil) { _, closed in
-            // A sheet takes focus; give the Crown back to the page when it closes.
-            if closed { crownFocused = true }
+        .onChange(of: scenePhase) { _, phase in
+            // Wrist down or app switch: save and let go of the tile.
+            if phase != .active { editor.release() }
         }
+    }
+
+    private var crownFocusContext: CrownFocus {
+        CrownFocus(
+            binding: $crownFocus,
+            scope: crownScope,
+            claim: CrownClaim(
+                isEligible: scenePhase == .active && controller.page == .exercise && controller.sheet == nil,
+                sheetDismissals: sheetDismissals
+            )
+        )
     }
 
     @ViewBuilder
     private func crownHost(engine: WorkoutEngine, entry: SessionExercise) -> some View {
-        let range = crownRange(engine: engine)
+        let focus = crownFocusContext
+        let pageCrown = pageCrown(engine: engine, focus: focus)
         Group {
             if let set = engine.currentSet(of: entry) {
                 ExercisePage(
@@ -79,139 +175,87 @@ private struct ExerciseTab: View {
                     engine: engine,
                     entry: entry,
                     set: set,
-                    selection: selection,
+                    selection: editor.selection,
+                    weightEdit: editor.shownEdit(for: .weight),
+                    repsEdit: editor.shownEdit(for: .reps),
                     toggle: toggle,
-                    adjust: { tile, delta in adjust(tile, by: delta, engine: engine, entry: entry) },
+                    adjust: editor.adjust,
                     openMenu: openMenu,
                     log: {
-                        release()
+                        // Save the edit first: the set is logged with what is on screen.
+                        editor.release()
                         controller.logSet()
                     }
                 )
+                .modifier(pageCrown)
             } else {
-                ExerciseDonePage(controller: controller, engine: engine, entry: entry, openMenu: openMenu)
+                ExerciseDonePage(
+                    controller: controller,
+                    engine: engine,
+                    entry: entry,
+                    crownFocus: focus,
+                    pageCrown: pageCrown,
+                    openMenu: openMenu
+                )
             }
         }
         .padding(.horizontal, 2)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .contentShape(Rectangle())
         .onLongPressGesture(minimumDuration: 0.5, perform: openMenu)
-        .focusable()
-        .focused($crownFocused)
-        .focusEffectDisabled()
-        .digitalCrownRotation(
-            detent: crownBinding(engine: engine, entry: entry),
-            from: range.lowerBound,
-            through: range.upperBound,
-            by: 1,
-            sensitivity: crownSensitivity,
-            isContinuous: false,
-            isHapticFeedbackEnabled: true
-        )
-        .onAppear { crownFocused = true }
-        .task(id: interactions) {
-            guard selection != nil else { return }
-            try? await Task.sleep(for: Self.idleRelease)
-            guard !Task.isCancelled else { return }
-            release()
-        }
     }
 
     // MARK: Crown
 
-    private var crownSensitivity: DigitalCrownRotationalSensitivity {
-        switch selection {
-        case .weight: .high
-        case .reps: .medium
-        case nil: .low
+    /// With a tile selected the Crown's detent *is* the edit's value, in a range that only
+    /// moves while the Crown is idle (see `CrownEdit`). With none it picks the exercise.
+    private func pageCrown(engine: WorkoutEngine, focus: CrownFocus) -> PageCrown {
+        if let selection = editor.selection, let edit = editor.edit {
+            let editor = editor
+            return PageCrown(
+                binding: Binding(
+                    get: { editor.edit?.value ?? edit.value },
+                    set: { editor.crownMoved(to: $0) }
+                ),
+                range: edit.crownRange,
+                // Weight: one gentle movement per 0.5 kg / 1 lb step, stepped slowly and precisely.
+                sensitivity: selection == .weight ? .low : .medium,
+                onIdle: editor.crownIdle,
+                focus: focus
+            )
         }
-    }
-
-    private func crownRange(engine: WorkoutEngine) -> ClosedRange<Int> {
-        switch selection {
-        case .weight: 0...controller.scale.maximumSteps
-        case .reps: 0...Self.maxReps
-        // Never an empty range; extra detents past the last exercise are clamped by the engine.
-        case nil: 0...max(1, engine.entries.count - 1)
-        }
-    }
-
-    private func crownBinding(engine: WorkoutEngine, entry: SessionExercise) -> Binding<Int> {
-        Binding(
-            get: { crownValue(engine: engine, entry: entry) },
-            set: { newValue in
-                guard newValue != crownValue(engine: engine, entry: entry) else { return }
-                switch selection {
-                case .weight:
-                    controller.setWeight(controller.scale.kilograms(forSteps: newValue))
-                    interactions += 1
-                case .reps:
-                    controller.setReps(min(max(newValue, 0), Self.maxReps))
-                    interactions += 1
-                case nil:
+        return PageCrown(
+            binding: Binding(
+                get: { engine.currentIndex },
+                set: { newValue in
+                    guard newValue != engine.currentIndex else { return }
                     controller.selectEntry(at: newValue)
                 }
-            }
+            ),
+            // Never an empty range; extra detents past the last exercise are clamped by the engine.
+            range: 0...max(1, engine.entries.count - 1),
+            sensitivity: .low,
+            onIdle: editor.crownIdle,
+            focus: focus
         )
-    }
-
-    private func crownValue(engine: WorkoutEngine, entry: SessionExercise) -> Int {
-        let values = engine.currentSet.map(engine.values(for:)) ?? SetValues()
-        switch selection {
-        case .weight:
-            return controller.scale.steps(forKilograms: values.weightKg ?? startingWeight(entry) ?? 0)
-        case .reps:
-            return values.reps ?? entry.repLow ?? 0
-        case nil:
-            return engine.currentIndex
-        }
-    }
-
-    private func startingWeight(_ entry: SessionExercise) -> Double? {
-        entry.exercise?.equipment.startingWeightKilograms(in: controller.unit)
     }
 
     // MARK: Selection
 
     private func toggle(_ tile: ValueTile) {
-        if selection == tile {
-            release()
-        } else {
-            if selection != nil { controller.commitEdits() }
-            selection = tile
-            crownFocused = true
-            interactions += 1
-        }
-    }
-
-    private func release() {
-        guard selection != nil else { return }
-        selection = nil
-        controller.commitEdits()
+        editor.toggle(tile)
+        crownFocus = .page
     }
 
     private func openMenu() {
-        release()
+        editor.release()
         controller.sheet = .menu
     }
 
     private func applyInitialSelection() {
         if let initial = controller.initialTileSelection {
-            selection = initial
+            editor.select(initial)
             controller.initialTileSelection = nil
         }
-    }
-
-    /// VoiceOver's adjustable action: one step up or down.
-    private func adjust(_ tile: ValueTile, by delta: Int, engine: WorkoutEngine, entry: SessionExercise) {
-        let values = engine.currentSet.map(engine.values(for:)) ?? SetValues()
-        switch tile {
-        case .weight:
-            let steps = controller.scale.steps(forKilograms: values.weightKg ?? startingWeight(entry) ?? 0)
-            controller.setWeight(controller.scale.kilograms(forSteps: steps + delta))
-        case .reps:
-            controller.setReps(min(max((values.reps ?? entry.repLow ?? 0) + delta, 0), Self.maxReps))
-        }
-        controller.commitEdits()
     }
 }

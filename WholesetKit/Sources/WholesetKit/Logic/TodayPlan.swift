@@ -91,20 +91,10 @@ public enum TodayPlanResolver {
 
     /// One row per valid weekday, picking the newest when there are duplicates.
     private static func effectiveRows(_ planDays: [WeekPlanDay]) -> [Int: WeekPlanDay] {
-        var rows: [Int: WeekPlanDay] = [:]
-        for day in planDays where (1...7).contains(day.weekday) {
-            if let existing = rows[day.weekday], !isNewer(day, than: existing) { continue }
-            rows[day.weekday] = day
-        }
-        return rows
+        WeekPlan.effectiveRows(planDays)
     }
 
-    private static func isNewer(_ lhs: WeekPlanDay, than rhs: WeekPlanDay) -> Bool {
-        if lhs.updatedAt != rhs.updatedAt { return lhs.updatedAt > rhs.updatedAt }
-        return lhs.id.uuidString > rhs.id.uuidString
-    }
-
-    private static func nextPlannedDay(after today: Int, rows: [Int: WeekPlanDay]) -> UpcomingDay? {
+    static func nextPlannedDay(after today: Int, rows: [Int: WeekPlanDay]) -> UpcomingDay? {
         for offset in 1...6 {
             let weekday = (today - 1 + offset) % 7 + 1
             if let routine = rows[weekday]?.routine {

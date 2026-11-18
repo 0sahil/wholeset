@@ -2,6 +2,7 @@
 
 import Foundation
 import Observation
+import WatchKit
 import WholesetKit
 
 /// The selected weight or reps tile and its Crown edit.
@@ -13,16 +14,24 @@ import WholesetKit
 /// ``idleRelease`` timeout, the menu, leaving the page) and before a set is logged. A crash
 /// mid-edit can lose only the edit since the last pause; logged sets are saved by the engine
 /// the moment they are logged.
+///
+/// The Crown profile (speed and detents per step) and the weight scale are taken when a tile
+/// is selected and kept until it is released, so settings arriving from iCloud mid-edit
+/// never change a turn in progress.
 @Observable
 final class TileEditor {
     /// The selected tile, if any.
     private(set) var selection: ValueTile?
     /// The edit of the selected tile.
     private(set) var edit: CrownEdit?
+    /// How the Crown edits the selected tile.
+    private(set) var profile: CrownProfile?
 
     @ObservationIgnored private let controller: WorkoutController
     /// The set the edit belongs to; an edit is never written to any other set.
     @ObservationIgnored private var setID: UUID?
+    /// The weight scale the edit's steps are in.
+    @ObservationIgnored private var scale: WeightScale?
     @ObservationIgnored private var saveTask: Task<Void, Never>?
     @ObservationIgnored private var releaseTask: Task<Void, Never>?
 
@@ -53,13 +62,19 @@ final class TileEditor {
     /// Selects `tile`, saving any edit of the other tile first.
     func select(_ tile: ValueTile) {
         save()
-        guard let engine = controller.engine, let set = engine.currentSet, let edit = makeEdit(for: tile) else {
+        let profile = tile == .weight ? controller.weightCrown : controller.repsCrown
+        let scale = controller.scale
+        guard let engine = controller.engine, let set = engine.currentSet,
+              let edit = makeEdit(for: tile, profile: profile, scale: scale) else {
             clear()
             return
         }
         selection = tile
         self.edit = edit
+        self.profile = profile
+        self.scale = scale
         setID = set.id
+        controller.tileEditingChanged(isEditing: true)
         restartReleaseTimer()
     }
 
@@ -72,9 +87,15 @@ final class TileEditor {
     private func clear() {
         saveTask?.cancel()
         releaseTask?.cancel()
+        let wasEditing = selection != nil
         selection = nil
         edit = nil
+        profile = nil
+        scale = nil
         setID = nil
+        if wasEditing {
+            controller.tileEditingChanged(isEditing: false)
+        }
     }
 
     // MARK: Crown
@@ -82,8 +103,14 @@ final class TileEditor {
     /// The Crown reported detent `position` for the selected tile.
     func crownMoved(to position: Int) {
         guard var edit else { return }
-        guard edit.crownMoved(to: position) else { return }
+        let changed = edit.crownMoved(to: position)
+        // Part of a step still moves the position, which the Crown binding reads back.
+        guard edit != self.edit else { return }
         self.edit = edit
+        guard changed else { return }
+        if profile?.usesSystemHaptics == false {
+            Haptics.play(.click)
+        }
         scheduleSave()
         restartReleaseTimer()
     }
@@ -107,8 +134,10 @@ final class TileEditor {
             restartReleaseTimer()
             return
         }
-        guard var oneOff = makeEdit(for: tile), oneOff.step(by: delta) else { return }
-        write(oneOff.value, to: tile)
+        let scale = controller.scale
+        guard var oneOff = makeEdit(for: tile, profile: CrownProfile(rate: .low), scale: scale),
+              oneOff.step(by: delta) else { return }
+        write(oneOff.value, to: tile, scale: scale)
         controller.commitEdits()
     }
 
@@ -124,15 +153,15 @@ final class TileEditor {
             clear()
             return
         }
-        write(edit.value, to: selection)
+        write(edit.value, to: selection, scale: scale ?? controller.scale)
         controller.commitEdits()
         edit.markSaved()
         self.edit = edit
     }
 
-    private func write(_ value: Int, to tile: ValueTile) {
+    private func write(_ value: Int, to tile: ValueTile, scale: WeightScale) {
         switch tile {
-        case .weight: controller.setWeight(controller.scale.kilograms(forSteps: value))
+        case .weight: controller.setWeight(scale.kilograms(forSteps: value))
         case .reps: controller.setReps(value)
         }
     }
@@ -158,27 +187,28 @@ final class TileEditor {
     // MARK: Reading
 
     /// An edit of `tile` on the current set, starting from what the set shows.
-    private func makeEdit(for tile: ValueTile) -> CrownEdit? {
+    private func makeEdit(for tile: ValueTile, profile: CrownProfile, scale: WeightScale) -> CrownEdit? {
         guard let engine = controller.engine, let entry = engine.currentEntry, let set = engine.currentSet(of: entry) else {
             return nil
         }
         let values = engine.values(for: set)
         switch tile {
         case .weight:
-            let scale = controller.scale
-            let start = values.weightKg ?? entry.exercise?.equipment.startingWeightKilograms(in: controller.unit) ?? 0
+            let start = values.weightKg ?? entry.exercise?.equipment.startingWeightKilograms(in: scale.unit) ?? 0
             return CrownEdit(
                 value: scale.steps(forKilograms: start),
                 isStored: values.weightKg != nil,
                 bounds: 0...scale.maximumSteps,
-                span: Self.crownSpan
+                span: Self.crownSpan,
+                detentsPerStep: profile.detentsPerStep
             )
         case .reps:
             return CrownEdit(
                 value: values.reps ?? entry.repLow ?? 0,
                 isStored: values.reps != nil,
                 bounds: 0...Self.maxReps,
-                span: Self.crownSpan
+                span: Self.crownSpan,
+                detentsPerStep: profile.detentsPerStep
             )
         }
     }

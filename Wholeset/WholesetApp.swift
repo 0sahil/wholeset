@@ -6,13 +6,16 @@ import WholesetKit
 
 @main
 struct WholesetApp: App {
-    private let store = WholesetStore.loadAppContainer(cloudKit: WholesetStore.cloudKitEnabledByDefault)
+    private let model = AppModel.launch()
 
     var body: some Scene {
         WindowGroup {
-            if let container = store.container {
+            if let model {
                 RootTabView()
-                    .modelContainer(container)
+                    .environment(model)
+                    .environment(model.store)
+                    .environment(model.navigation)
+                    .modelContainer(model.container)
             } else {
                 StoreUnavailableView()
             }

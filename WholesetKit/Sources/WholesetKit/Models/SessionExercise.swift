@@ -3,7 +3,7 @@
 import Foundation
 import SwiftData
 
-extension SchemaV1 {
+extension SchemaV2 {
     /// One exercise performed within a session.
     @Model
     public final class SessionExercise {
@@ -35,11 +35,11 @@ extension SchemaV1 {
     }
 }
 
-extension SchemaV1.SessionExercise: OrderedChild {}
+extension SessionExercise: OrderedChild {}
 
-extension SchemaV1.SessionExercise {
+extension SessionExercise {
     /// ``sets`` in display order.
-    public var sortedSets: [SchemaV1.SetLog] {
+    public var sortedSets: [SetLog] {
         (sets ?? []).sortedByOrder()
     }
 }

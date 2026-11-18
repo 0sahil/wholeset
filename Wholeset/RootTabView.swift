@@ -1,28 +1,21 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import SwiftUI
+import WholesetKit
 
-/// The iPhone app's top-level sections.
-enum AppTab: Hashable {
-    case plan
-    case history
-    case exercises
-    case settings
-}
-
-/// The tab bar holding the four sections. Each tab owns its own navigation stack.
+/// The tab bar holding the four sections. Each tab owns its own navigation stack. The
+/// first-launch screens cover it until they are done on this device.
 struct RootTabView: View {
-    @State private var selection: AppTab = .plan
+    @Environment(AppModel.self) private var model
+    @Environment(AppNavigation.self) private var navigation
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
-        TabView(selection: $selection) {
+        @Bindable var navigation = navigation
+        @Bindable var model = model
+        TabView(selection: $navigation.tab) {
             Tab("Plan", systemImage: "calendar", value: AppTab.plan) {
-                TabPlaceholderView(
-                    title: "Plan",
-                    systemImage: "calendar",
-                    emptyTitle: "No Routines Yet",
-                    message: "Your routines and weekly plan will appear here."
-                )
+                PlanView()
             }
             Tab("History", systemImage: "clock.arrow.circlepath", value: AppTab.history) {
                 TabPlaceholderView(
@@ -33,25 +26,20 @@ struct RootTabView: View {
                 )
             }
             Tab("Exercises", systemImage: "dumbbell", value: AppTab.exercises) {
-                TabPlaceholderView(
-                    title: "Exercises",
-                    systemImage: "dumbbell",
-                    emptyTitle: "No Exercises Yet",
-                    message: "The exercise library will appear here."
-                )
+                ExercisesView()
             }
             Tab("Settings", systemImage: "gearshape", value: AppTab.settings) {
-                TabPlaceholderView(
-                    title: "Settings",
-                    systemImage: "gearshape",
-                    emptyTitle: "Nothing to Set Yet",
-                    message: "Units, rest times and sync status will appear here."
-                )
+                SettingsView()
+            }
+        }
+        .fullScreenCover(isPresented: $model.showsOnboarding) {
+            OnboardingView(step: model.onboardingStep)
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                model.health.refresh()
+                model.store.sync.refreshAccountStatus()
             }
         }
     }
-}
-
-#Preview {
-    RootTabView()
 }

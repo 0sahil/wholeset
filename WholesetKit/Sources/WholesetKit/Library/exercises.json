@@ -1,0 +1,1646 @@
+{
+  "source": "free-exercise-db, https://github.com/yuhonas/free-exercise-db",
+  "license": "Unlicense (public domain)",
+  "exercises": [
+    {
+      "key": "Ab_Roller",
+      "name": "Ab Wheel Rollout",
+      "equipment": "other",
+      "muscle": "abdominals",
+      "aliases": [
+        "Ab Roller",
+        "Ab Wheel"
+      ]
+    },
+    {
+      "key": "Dumbbell_Alternate_Bicep_Curl",
+      "name": "Alternating Dumbbell Curl",
+      "equipment": "dumbbell",
+      "muscle": "biceps",
+      "aliases": [
+        "Dumbbell Alternate Bicep Curl",
+        "Alternating Bicep Curl (Dumbbell)"
+      ]
+    },
+    {
+      "key": "Arnold_Dumbbell_Press",
+      "name": "Arnold Press",
+      "equipment": "dumbbell",
+      "muscle": "shoulders",
+      "aliases": [
+        "Arnold Dumbbell Press",
+        "Arnold Press (Dumbbell)"
+      ]
+    },
+    {
+      "key": "Band_Assisted_Pull-Up",
+      "name": "Assisted Pull-up",
+      "equipment": "machine",
+      "muscle": "lats",
+      "aliases": [
+        "Band Assisted Pull-Up",
+        "Pull Up (Assisted)",
+        "Assisted Pull Up",
+        "Band-Assisted Pull-up"
+      ]
+    },
+    {
+      "key": "Hyperextensions_Back_Extensions",
+      "name": "Back Extension",
+      "equipment": "bodyweight",
+      "muscle": "lowerBack",
+      "aliases": [
+        "Hyperextensions (Back Extensions)",
+        "Back Extension (Hyperextension)",
+        "Hyperextension",
+        "Back Extension (Machine)"
+      ]
+    },
+    {
+      "key": "Barbell_Curl",
+      "name": "Barbell Curl",
+      "equipment": "barbell",
+      "muscle": "biceps",
+      "aliases": [
+        "Bicep Curl (Barbell)",
+        "Biceps Curl (Barbell)",
+        "Barbell Bicep Curl"
+      ]
+    },
+    {
+      "key": "Barbell_Lunge",
+      "name": "Barbell Lunge",
+      "equipment": "barbell",
+      "muscle": "quadriceps",
+      "aliases": [
+        "Lunge (Barbell)"
+      ]
+    },
+    {
+      "key": "Bent_Over_Barbell_Row",
+      "name": "Barbell Row",
+      "equipment": "barbell",
+      "muscle": "middleBack",
+      "aliases": [
+        "Bent Over Barbell Row",
+        "Bent Over Row (Barbell)",
+        "Bent-Over Row",
+        "Barbell Bent Over Row"
+      ]
+    },
+    {
+      "key": "Barbell_Shrug",
+      "name": "Barbell Shrug",
+      "equipment": "barbell",
+      "muscle": "traps",
+      "aliases": [
+        "Shrug (Barbell)"
+      ]
+    },
+    {
+      "key": "Bench_Dips",
+      "name": "Bench Dip",
+      "equipment": "bodyweight",
+      "muscle": "triceps",
+      "aliases": [
+        "Bench Dips",
+        "Bench Dip (Bodyweight)"
+      ]
+    },
+    {
+      "key": "Barbell_Bench_Press_-_Medium_Grip",
+      "name": "Bench Press",
+      "equipment": "barbell",
+      "muscle": "chest",
+      "aliases": [
+        "Barbell Bench Press - Medium Grip",
+        "Bench Press (Barbell)",
+        "Barbell Bench Press",
+        "Flat Bench Press"
+      ]
+    },
+    {
+      "key": "Bent_Over_Two-Dumbbell_Row",
+      "name": "Bent-Over Dumbbell Row",
+      "equipment": "dumbbell",
+      "muscle": "middleBack",
+      "aliases": [
+        "Bent Over Two-Dumbbell Row",
+        "Bent Over Row (Dumbbell)"
+      ]
+    },
+    {
+      "key": "Seated_Bent-Over_Rear_Delt_Raise",
+      "name": "Bent-Over Rear Delt Raise",
+      "equipment": "dumbbell",
+      "muscle": "shoulders",
+      "aliases": [
+        "Seated Bent-Over Rear Delt Raise",
+        "Rear Delt Raise (Dumbbell)",
+        "Bent Over Lateral Raise (Dumbbell)"
+      ]
+    },
+    {
+      "key": "Bodyweight_Squat",
+      "name": "Bodyweight Squat",
+      "equipment": "bodyweight",
+      "muscle": "quadriceps",
+      "aliases": [
+        "Air Squat",
+        "Squat (Bodyweight)"
+      ]
+    },
+    {
+      "key": "Box_Squat",
+      "name": "Box Squat",
+      "equipment": "barbell",
+      "muscle": "quadriceps",
+      "aliases": [
+        "Box Squat (Barbell)"
+      ]
+    },
+    {
+      "key": "Split_Squat_with_Dumbbells",
+      "name": "Bulgarian Split Squat",
+      "equipment": "dumbbell",
+      "muscle": "quadriceps",
+      "aliases": [
+        "Split Squat with Dumbbells",
+        "Bulgarian Split Squat (Dumbbell)",
+        "Rear Foot Elevated Split Squat"
+      ]
+    },
+    {
+      "key": "Standing_Cable_Chest_Press",
+      "name": "Cable Chest Press",
+      "equipment": "cable",
+      "muscle": "chest",
+      "aliases": [
+        "Standing Cable Chest Press",
+        "Chest Press (Cable)"
+      ]
+    },
+    {
+      "key": "Cable_Crunch",
+      "name": "Cable Crunch",
+      "equipment": "cable",
+      "muscle": "abdominals",
+      "aliases": [
+        "Kneeling Cable Crunch",
+        "Crunch (Cable)"
+      ]
+    },
+    {
+      "key": "Standing_Biceps_Cable_Curl",
+      "name": "Cable Curl",
+      "equipment": "cable",
+      "muscle": "biceps",
+      "aliases": [
+        "Standing Biceps Cable Curl",
+        "Bicep Curl (Cable)",
+        "Cable Bicep Curl"
+      ]
+    },
+    {
+      "key": "External_Rotation_with_Cable",
+      "name": "Cable External Rotation",
+      "equipment": "cable",
+      "muscle": "shoulders",
+      "aliases": [
+        "External Rotation with Cable",
+        "External Rotation (Cable)"
+      ]
+    },
+    {
+      "key": "Cable_Crossover",
+      "name": "Cable Fly",
+      "equipment": "cable",
+      "muscle": "chest",
+      "aliases": [
+        "Cable Crossover",
+        "Cable Crossover (Cable)",
+        "Chest Fly (Cable)",
+        "Cable Chest Fly"
+      ]
+    },
+    {
+      "key": "Front_Cable_Raise",
+      "name": "Cable Front Raise",
+      "equipment": "cable",
+      "muscle": "shoulders",
+      "aliases": [
+        "Front Cable Raise",
+        "Front Raise (Cable)"
+      ]
+    },
+    {
+      "key": "One-Legged_Cable_Kickback",
+      "name": "Cable Glute Kickback",
+      "equipment": "cable",
+      "muscle": "glutes",
+      "aliases": [
+        "One-Legged Cable Kickback",
+        "Glute Kickback (Cable)",
+        "Cable Kickback"
+      ]
+    },
+    {
+      "key": "Standing_Low-Pulley_Deltoid_Raise",
+      "name": "Cable Lateral Raise",
+      "equipment": "cable",
+      "muscle": "shoulders",
+      "aliases": [
+        "Standing Low-Pulley Deltoid Raise",
+        "Lateral Raise (Cable)",
+        "Single Arm Lateral Raise (Cable)"
+      ]
+    },
+    {
+      "key": "Pull_Through",
+      "name": "Cable Pull-Through",
+      "equipment": "cable",
+      "muscle": "glutes",
+      "aliases": [
+        "Pull Through",
+        "Cable Pull Through",
+        "Pull Through (Cable)"
+      ]
+    },
+    {
+      "key": "Cable_Rear_Delt_Fly",
+      "name": "Cable Rear Delt Fly",
+      "equipment": "cable",
+      "muscle": "shoulders",
+      "aliases": [
+        "Rear Delt Fly (Cable)",
+        "Reverse Fly (Cable)"
+      ]
+    },
+    {
+      "key": "Upright_Cable_Row",
+      "name": "Cable Upright Row",
+      "equipment": "cable",
+      "muscle": "traps",
+      "aliases": [
+        "Upright Cable Row",
+        "Upright Row (Cable)"
+      ]
+    },
+    {
+      "key": "Standing_Cable_Wood_Chop",
+      "name": "Cable Woodchop",
+      "equipment": "cable",
+      "muscle": "abdominals",
+      "aliases": [
+        "Standing Cable Wood Chop",
+        "Wood Chop (Cable)",
+        "Cable Wood Chop"
+      ]
+    },
+    {
+      "key": "Dips_-_Chest_Version",
+      "name": "Chest Dip",
+      "equipment": "bodyweight",
+      "muscle": "chest",
+      "aliases": [
+        "Dips - Chest Version",
+        "Dips",
+        "Chest Dip (Bodyweight)"
+      ]
+    },
+    {
+      "key": "Dumbbell_Incline_Row",
+      "name": "Chest-Supported Dumbbell Row",
+      "equipment": "dumbbell",
+      "muscle": "middleBack",
+      "aliases": [
+        "Dumbbell Incline Row",
+        "Incline Row (Dumbbell)",
+        "Incline Dumbbell Row"
+      ]
+    },
+    {
+      "key": "Lying_T-Bar_Row",
+      "name": "Chest-Supported T-Bar Row",
+      "equipment": "machine",
+      "muscle": "middleBack",
+      "aliases": [
+        "Lying T-Bar Row",
+        "T Bar Row (Machine)"
+      ]
+    },
+    {
+      "key": "Chin-Up",
+      "name": "Chin-up",
+      "equipment": "bodyweight",
+      "muscle": "lats",
+      "aliases": [
+        "Chin Up",
+        "Chinup",
+        "Chin Up (Bodyweight)"
+      ]
+    },
+    {
+      "key": "Clean_and_Press",
+      "name": "Clean and Press",
+      "equipment": "barbell",
+      "muscle": "shoulders",
+      "aliases": [
+        "Clean and Press (Barbell)"
+      ]
+    },
+    {
+      "key": "Close-Grip_Barbell_Bench_Press",
+      "name": "Close-Grip Bench Press",
+      "equipment": "barbell",
+      "muscle": "triceps",
+      "aliases": [
+        "Close-Grip Barbell Bench Press",
+        "Bench Press - Close Grip (Barbell)",
+        "Close Grip Bench Press"
+      ]
+    },
+    {
+      "key": "Close-Grip_Front_Lat_Pulldown",
+      "name": "Close-Grip Lat Pulldown",
+      "equipment": "cable",
+      "muscle": "lats",
+      "aliases": [
+        "Close-Grip Front Lat Pulldown",
+        "Lat Pulldown - Close Grip (Cable)"
+      ]
+    },
+    {
+      "key": "Push-Ups_-_Close_Triceps_Position",
+      "name": "Close-Grip Push-up",
+      "equipment": "bodyweight",
+      "muscle": "triceps",
+      "aliases": [
+        "Push-Ups - Close Triceps Position",
+        "Diamond Push Up",
+        "Close Grip Push Up"
+      ]
+    },
+    {
+      "key": "Concentration_Curls",
+      "name": "Concentration Curl",
+      "equipment": "dumbbell",
+      "muscle": "biceps",
+      "aliases": [
+        "Concentration Curls",
+        "Concentration Curl (Dumbbell)"
+      ]
+    },
+    {
+      "key": "Crunches",
+      "name": "Crunch",
+      "equipment": "bodyweight",
+      "muscle": "abdominals",
+      "aliases": [
+        "Crunches",
+        "Crunch (Bodyweight)"
+      ]
+    },
+    {
+      "key": "Barbell_Deadlift",
+      "name": "Deadlift",
+      "equipment": "barbell",
+      "muscle": "lowerBack",
+      "aliases": [
+        "Barbell Deadlift",
+        "Deadlift (Barbell)",
+        "Conventional Deadlift"
+      ]
+    },
+    {
+      "key": "Decline_Barbell_Bench_Press",
+      "name": "Decline Bench Press",
+      "equipment": "barbell",
+      "muscle": "chest",
+      "aliases": [
+        "Decline Barbell Bench Press",
+        "Decline Bench Press (Barbell)"
+      ]
+    },
+    {
+      "key": "Decline_Crunch",
+      "name": "Decline Crunch",
+      "equipment": "bodyweight",
+      "muscle": "abdominals",
+      "aliases": [
+        "Decline Crunch (Bodyweight)"
+      ]
+    },
+    {
+      "key": "Decline_Dumbbell_Bench_Press",
+      "name": "Decline Dumbbell Press",
+      "equipment": "dumbbell",
+      "muscle": "chest",
+      "aliases": [
+        "Decline Dumbbell Bench Press",
+        "Decline Bench Press (Dumbbell)"
+      ]
+    },
+    {
+      "key": "Deficit_Deadlift",
+      "name": "Deficit Deadlift",
+      "equipment": "barbell",
+      "muscle": "lowerBack",
+      "aliases": [
+        "Deficit Deadlift (Barbell)"
+      ]
+    },
+    {
+      "key": "Dumbbell_Bench_Press",
+      "name": "Dumbbell Bench Press",
+      "equipment": "dumbbell",
+      "muscle": "chest",
+      "aliases": [
+        "Bench Press (Dumbbell)",
+        "DB Bench Press"
+      ]
+    },
+    {
+      "key": "Standing_Dumbbell_Calf_Raise",
+      "name": "Dumbbell Calf Raise",
+      "equipment": "dumbbell",
+      "muscle": "calves",
+      "aliases": [
+        "Standing Dumbbell Calf Raise",
+        "Calf Raise (Dumbbell)"
+      ]
+    },
+    {
+      "key": "Dumbbell_Bicep_Curl",
+      "name": "Dumbbell Curl",
+      "equipment": "dumbbell",
+      "muscle": "biceps",
+      "aliases": [
+        "Dumbbell Bicep Curl",
+        "Bicep Curl (Dumbbell)",
+        "Biceps Curl (Dumbbell)"
+      ]
+    },
+    {
+      "key": "Dumbbell_Floor_Press",
+      "name": "Dumbbell Floor Press",
+      "equipment": "dumbbell",
+      "muscle": "chest",
+      "aliases": [
+        "Floor Press (Dumbbell)"
+      ]
+    },
+    {
+      "key": "Dumbbell_Flyes",
+      "name": "Dumbbell Fly",
+      "equipment": "dumbbell",
+      "muscle": "chest",
+      "aliases": [
+        "Dumbbell Flyes",
+        "Chest Fly (Dumbbell)",
+        "Dumbbell Flye"
+      ]
+    },
+    {
+      "key": "Tricep_Dumbbell_Kickback",
+      "name": "Dumbbell Kickback",
+      "equipment": "dumbbell",
+      "muscle": "triceps",
+      "aliases": [
+        "Tricep Dumbbell Kickback",
+        "Triceps Kickback (Dumbbell)",
+        "Tricep Kickback"
+      ]
+    },
+    {
+      "key": "Dumbbell_Lunges",
+      "name": "Dumbbell Lunge",
+      "equipment": "dumbbell",
+      "muscle": "quadriceps",
+      "aliases": [
+        "Dumbbell Lunges",
+        "Lunge (Dumbbell)"
+      ]
+    },
+    {
+      "key": "Standing_Dumbbell_Triceps_Extension",
+      "name": "Dumbbell Overhead Triceps Extension",
+      "equipment": "dumbbell",
+      "muscle": "triceps",
+      "aliases": [
+        "Standing Dumbbell Triceps Extension",
+        "Overhead Triceps Extension (Dumbbell)",
+        "Triceps Extension (Dumbbell)"
+      ]
+    },
+    {
+      "key": "Two-Arm_Dumbbell_Preacher_Curl",
+      "name": "Dumbbell Preacher Curl",
+      "equipment": "dumbbell",
+      "muscle": "biceps",
+      "aliases": [
+        "Two-Arm Dumbbell Preacher Curl",
+        "Preacher Curl (Dumbbell)"
+      ]
+    },
+    {
+      "key": "Straight-Arm_Dumbbell_Pullover",
+      "name": "Dumbbell Pullover",
+      "equipment": "dumbbell",
+      "muscle": "chest",
+      "aliases": [
+        "Straight-Arm Dumbbell Pullover",
+        "Pullover (Dumbbell)"
+      ]
+    },
+    {
+      "key": "Stiff-Legged_Dumbbell_Deadlift",
+      "name": "Dumbbell Romanian Deadlift",
+      "equipment": "dumbbell",
+      "muscle": "hamstrings",
+      "aliases": [
+        "Stiff-Legged Dumbbell Deadlift",
+        "Romanian Deadlift (Dumbbell)",
+        "Dumbbell RDL"
+      ]
+    },
+    {
+      "key": "One-Arm_Dumbbell_Row",
+      "name": "Dumbbell Row",
+      "equipment": "dumbbell",
+      "muscle": "middleBack",
+      "aliases": [
+        "One-Arm Dumbbell Row",
+        "Bent Over One Arm Row (Dumbbell)",
+        "Dumbbell Row (Dumbbell)"
+      ]
+    },
+    {
+      "key": "Dumbbell_Shoulder_Press",
+      "name": "Dumbbell Shoulder Press",
+      "equipment": "dumbbell",
+      "muscle": "shoulders",
+      "aliases": [
+        "Shoulder Press (Dumbbell)",
+        "Overhead Press (Dumbbell)"
+      ]
+    },
+    {
+      "key": "Dumbbell_Shrug",
+      "name": "Dumbbell Shrug",
+      "equipment": "dumbbell",
+      "muscle": "traps",
+      "aliases": [
+        "Shrug (Dumbbell)"
+      ]
+    },
+    {
+      "key": "Dumbbell_Side_Bend",
+      "name": "Dumbbell Side Bend",
+      "equipment": "dumbbell",
+      "muscle": "abdominals",
+      "aliases": [
+        "Side Bend (Dumbbell)"
+      ]
+    },
+    {
+      "key": "Dumbbell_Squat",
+      "name": "Dumbbell Squat",
+      "equipment": "dumbbell",
+      "muscle": "quadriceps",
+      "aliases": [
+        "Squat (Dumbbell)"
+      ]
+    },
+    {
+      "key": "Standing_Dumbbell_Upright_Row",
+      "name": "Dumbbell Upright Row",
+      "equipment": "dumbbell",
+      "muscle": "traps",
+      "aliases": [
+        "Standing Dumbbell Upright Row",
+        "Upright Row (Dumbbell)"
+      ]
+    },
+    {
+      "key": "EZ-Bar_Curl",
+      "name": "EZ-Bar Curl",
+      "equipment": "barbell",
+      "muscle": "biceps",
+      "aliases": [
+        "EZ Bar Biceps Curl",
+        "Bicep Curl (EZ Bar)",
+        "EZ Bar Curl"
+      ]
+    },
+    {
+      "key": "Face_Pull",
+      "name": "Face Pull",
+      "equipment": "cable",
+      "muscle": "shoulders",
+      "aliases": [
+        "Face Pull (Cable)",
+        "Cable Face Pull"
+      ]
+    },
+    {
+      "key": "Front_Dumbbell_Raise",
+      "name": "Front Raise",
+      "equipment": "dumbbell",
+      "muscle": "shoulders",
+      "aliases": [
+        "Front Dumbbell Raise",
+        "Front Raise (Dumbbell)",
+        "Dumbbell Front Raise"
+      ]
+    },
+    {
+      "key": "Front_Barbell_Squat",
+      "name": "Front Squat",
+      "equipment": "barbell",
+      "muscle": "quadriceps",
+      "aliases": [
+        "Front Barbell Squat",
+        "Front Squat (Barbell)"
+      ]
+    },
+    {
+      "key": "Barbell_Glute_Bridge",
+      "name": "Glute Bridge",
+      "equipment": "barbell",
+      "muscle": "glutes",
+      "aliases": [
+        "Barbell Glute Bridge",
+        "Glute Bridge (Barbell)"
+      ]
+    },
+    {
+      "key": "Glute_Ham_Raise",
+      "name": "Glute-Ham Raise",
+      "equipment": "machine",
+      "muscle": "hamstrings",
+      "aliases": [
+        "Glute Ham Raise"
+      ]
+    },
+    {
+      "key": "Goblet_Squat",
+      "name": "Goblet Squat",
+      "equipment": "dumbbell",
+      "muscle": "quadriceps",
+      "aliases": [
+        "Goblet Squat (Kettlebell)",
+        "Goblet Squat (Dumbbell)"
+      ]
+    },
+    {
+      "key": "Good_Morning",
+      "name": "Good Morning",
+      "equipment": "barbell",
+      "muscle": "hamstrings",
+      "aliases": [
+        "Good Morning (Barbell)"
+      ]
+    },
+    {
+      "key": "Hack_Squat",
+      "name": "Hack Squat",
+      "equipment": "machine",
+      "muscle": "quadriceps",
+      "aliases": [
+        "Hack Squat (Machine)"
+      ]
+    },
+    {
+      "key": "Hammer_Curls",
+      "name": "Hammer Curl",
+      "equipment": "dumbbell",
+      "muscle": "biceps",
+      "aliases": [
+        "Hammer Curls",
+        "Hammer Curl (Dumbbell)",
+        "Dumbbell Hammer Curl"
+      ]
+    },
+    {
+      "key": "Hanging_Leg_Raise",
+      "name": "Hanging Leg Raise",
+      "equipment": "bodyweight",
+      "muscle": "abdominals",
+      "aliases": [
+        "Hanging Leg Raise (Bodyweight)"
+      ]
+    },
+    {
+      "key": "Thigh_Abductor",
+      "name": "Hip Abduction",
+      "equipment": "machine",
+      "muscle": "abductors",
+      "aliases": [
+        "Thigh Abductor",
+        "Hip Abductor (Machine)",
+        "Abductor Machine"
+      ]
+    },
+    {
+      "key": "Thigh_Adductor",
+      "name": "Hip Adduction",
+      "equipment": "machine",
+      "muscle": "adductors",
+      "aliases": [
+        "Thigh Adductor",
+        "Hip Adductor (Machine)",
+        "Adductor Machine"
+      ]
+    },
+    {
+      "key": "Barbell_Hip_Thrust",
+      "name": "Hip Thrust",
+      "equipment": "barbell",
+      "muscle": "glutes",
+      "aliases": [
+        "Barbell Hip Thrust",
+        "Hip Thrust (Barbell)"
+      ]
+    },
+    {
+      "key": "Barbell_Incline_Bench_Press_-_Medium_Grip",
+      "name": "Incline Bench Press",
+      "equipment": "barbell",
+      "muscle": "chest",
+      "aliases": [
+        "Barbell Incline Bench Press - Medium Grip",
+        "Incline Bench Press (Barbell)",
+        "Incline Barbell Bench Press"
+      ]
+    },
+    {
+      "key": "Incline_Dumbbell_Curl",
+      "name": "Incline Dumbbell Curl",
+      "equipment": "dumbbell",
+      "muscle": "biceps",
+      "aliases": [
+        "Incline Curl (Dumbbell)"
+      ]
+    },
+    {
+      "key": "Incline_Dumbbell_Flyes",
+      "name": "Incline Dumbbell Fly",
+      "equipment": "dumbbell",
+      "muscle": "chest",
+      "aliases": [
+        "Incline Dumbbell Flyes",
+        "Incline Chest Fly (Dumbbell)"
+      ]
+    },
+    {
+      "key": "Incline_Dumbbell_Press",
+      "name": "Incline Dumbbell Press",
+      "equipment": "dumbbell",
+      "muscle": "chest",
+      "aliases": [
+        "Incline Bench Press (Dumbbell)",
+        "Incline DB Press",
+        "Incline Dumbbell Bench Press"
+      ]
+    },
+    {
+      "key": "Leverage_Incline_Chest_Press",
+      "name": "Incline Machine Press",
+      "equipment": "machine",
+      "muscle": "chest",
+      "aliases": [
+        "Leverage Incline Chest Press",
+        "Incline Chest Press (Machine)"
+      ]
+    },
+    {
+      "key": "Inverted_Row",
+      "name": "Inverted Row",
+      "equipment": "bodyweight",
+      "muscle": "middleBack",
+      "aliases": [
+        "Inverted Row (Bodyweight)",
+        "Bodyweight Row"
+      ]
+    },
+    {
+      "key": "One-Arm_Kettlebell_Swings",
+      "name": "Kettlebell Swing",
+      "equipment": "other",
+      "muscle": "hamstrings",
+      "aliases": [
+        "One-Arm Kettlebell Swings",
+        "Kettlebell Swing (Kettlebell)",
+        "KB Swing"
+      ]
+    },
+    {
+      "key": "Wide-Grip_Lat_Pulldown",
+      "name": "Lat Pulldown",
+      "equipment": "cable",
+      "muscle": "lats",
+      "aliases": [
+        "Wide-Grip Lat Pulldown",
+        "Lat Pulldown (Cable)",
+        "Lat Pulldown (Machine)"
+      ]
+    },
+    {
+      "key": "Side_Lateral_Raise",
+      "name": "Lateral Raise",
+      "equipment": "dumbbell",
+      "muscle": "shoulders",
+      "aliases": [
+        "Side Lateral Raise",
+        "Lateral Raise (Dumbbell)",
+        "Dumbbell Lateral Raise"
+      ]
+    },
+    {
+      "key": "Lying_Leg_Curls",
+      "name": "Leg Curl",
+      "equipment": "machine",
+      "muscle": "hamstrings",
+      "aliases": [
+        "Lying Leg Curls",
+        "Lying Leg Curl (Machine)",
+        "Lying Leg Curl",
+        "Leg Curl (Machine)"
+      ]
+    },
+    {
+      "key": "Leg_Extensions",
+      "name": "Leg Extension",
+      "equipment": "machine",
+      "muscle": "quadriceps",
+      "aliases": [
+        "Leg Extensions",
+        "Leg Extension (Machine)"
+      ]
+    },
+    {
+      "key": "Leg_Press",
+      "name": "Leg Press",
+      "equipment": "machine",
+      "muscle": "quadriceps",
+      "aliases": [
+        "Leg Press (Machine)"
+      ]
+    },
+    {
+      "key": "Calf_Press_On_The_Leg_Press_Machine",
+      "name": "Leg Press Calf Raise",
+      "equipment": "machine",
+      "muscle": "calves",
+      "aliases": [
+        "Calf Press On The Leg Press Machine",
+        "Calf Press on Leg Press",
+        "Calf Press (Machine)"
+      ]
+    },
+    {
+      "key": "Low_Cable_Crossover",
+      "name": "Low Cable Fly",
+      "equipment": "cable",
+      "muscle": "chest",
+      "aliases": [
+        "Low Cable Crossover",
+        "Low to High Cable Fly",
+        "Low Cable Crossover (Cable)"
+      ]
+    },
+    {
+      "key": "Lying_Dumbbell_Tricep_Extension",
+      "name": "Lying Dumbbell Triceps Extension",
+      "equipment": "dumbbell",
+      "muscle": "triceps",
+      "aliases": [
+        "Lying Dumbbell Tricep Extension",
+        "Lying Triceps Extension (Dumbbell)"
+      ]
+    },
+    {
+      "key": "Lying_One-Arm_Lateral_Raise",
+      "name": "Lying Lateral Raise",
+      "equipment": "dumbbell",
+      "muscle": "shoulders",
+      "aliases": [
+        "Lying One-Arm Lateral Raise",
+        "Lying Lateral Raise (Dumbbell)"
+      ]
+    },
+    {
+      "key": "Flat_Bench_Lying_Leg_Raise",
+      "name": "Lying Leg Raise",
+      "equipment": "bodyweight",
+      "muscle": "abdominals",
+      "aliases": [
+        "Flat Bench Lying Leg Raise",
+        "Leg Raise",
+        "Lying Leg Raise (Bodyweight)"
+      ]
+    },
+    {
+      "key": "Machine_Bicep_Curl",
+      "name": "Machine Bicep Curl",
+      "equipment": "machine",
+      "muscle": "biceps",
+      "aliases": [
+        "Bicep Curl (Machine)"
+      ]
+    },
+    {
+      "key": "Machine_Bench_Press",
+      "name": "Machine Chest Press",
+      "equipment": "machine",
+      "muscle": "chest",
+      "aliases": [
+        "Machine Bench Press",
+        "Chest Press (Machine)"
+      ]
+    },
+    {
+      "key": "Ab_Crunch_Machine",
+      "name": "Machine Crunch",
+      "equipment": "machine",
+      "muscle": "abdominals",
+      "aliases": [
+        "Ab Crunch Machine",
+        "Crunch (Machine)"
+      ]
+    },
+    {
+      "key": "Dip_Machine",
+      "name": "Machine Dip",
+      "equipment": "machine",
+      "muscle": "triceps",
+      "aliases": [
+        "Dip Machine",
+        "Seated Dip (Machine)",
+        "Triceps Dip (Assisted)"
+      ]
+    },
+    {
+      "key": "Leverage_High_Row",
+      "name": "Machine High Row",
+      "equipment": "machine",
+      "muscle": "middleBack",
+      "aliases": [
+        "Leverage High Row",
+        "High Row (Machine)"
+      ]
+    },
+    {
+      "key": "Machine_Preacher_Curls",
+      "name": "Machine Preacher Curl",
+      "equipment": "machine",
+      "muscle": "biceps",
+      "aliases": [
+        "Machine Preacher Curls",
+        "Preacher Curl (Machine)"
+      ]
+    },
+    {
+      "key": "Leverage_Iso_Row",
+      "name": "Machine Row",
+      "equipment": "machine",
+      "muscle": "lats",
+      "aliases": [
+        "Leverage Iso Row",
+        "Seated Row (Machine)",
+        "Iso-Lateral Row (Machine)"
+      ]
+    },
+    {
+      "key": "Machine_Shoulder_Military_Press",
+      "name": "Machine Shoulder Press",
+      "equipment": "machine",
+      "muscle": "shoulders",
+      "aliases": [
+        "Machine Shoulder (Military) Press",
+        "Shoulder Press (Machine)",
+        "Overhead Press (Machine)"
+      ]
+    },
+    {
+      "key": "Leverage_Shrug",
+      "name": "Machine Shrug",
+      "equipment": "machine",
+      "muscle": "traps",
+      "aliases": [
+        "Leverage Shrug",
+        "Shrug (Machine)"
+      ]
+    },
+    {
+      "key": "Machine_Triceps_Extension",
+      "name": "Machine Triceps Extension",
+      "equipment": "machine",
+      "muscle": "triceps",
+      "aliases": [
+        "Triceps Extension (Machine)"
+      ]
+    },
+    {
+      "key": "Narrow_Stance_Leg_Press",
+      "name": "Narrow-Stance Leg Press",
+      "equipment": "machine",
+      "muscle": "quadriceps",
+      "aliases": [
+        "Narrow Stance Leg Press",
+        "Leg Press - Narrow Stance (Machine)"
+      ]
+    },
+    {
+      "key": "Triceps_Overhead_Extension_with_Rope",
+      "name": "Overhead Cable Triceps Extension",
+      "equipment": "cable",
+      "muscle": "triceps",
+      "aliases": [
+        "Triceps Overhead Extension with Rope",
+        "Overhead Triceps Extension (Cable)",
+        "Rope Overhead Triceps Extension"
+      ]
+    },
+    {
+      "key": "Standing_Military_Press",
+      "name": "Overhead Press",
+      "equipment": "barbell",
+      "muscle": "shoulders",
+      "aliases": [
+        "Standing Military Press",
+        "Overhead Press (Barbell)",
+        "Military Press",
+        "Strict Military Press (Barbell)",
+        "OHP"
+      ]
+    },
+    {
+      "key": "Pallof_Press",
+      "name": "Pallof Press",
+      "equipment": "cable",
+      "muscle": "abdominals",
+      "aliases": [
+        "Pallof Press (Cable)"
+      ]
+    },
+    {
+      "key": "Butterfly",
+      "name": "Pec Deck",
+      "equipment": "machine",
+      "muscle": "chest",
+      "aliases": [
+        "Butterfly",
+        "Chest Fly (Machine)",
+        "Pec Deck (Machine)",
+        "Machine Fly"
+      ]
+    },
+    {
+      "key": "Plank",
+      "name": "Plank",
+      "equipment": "bodyweight",
+      "muscle": "abdominals",
+      "aliases": [
+        "Plank (Bodyweight)"
+      ]
+    },
+    {
+      "key": "Front_Plate_Raise",
+      "name": "Plate Front Raise",
+      "equipment": "other",
+      "muscle": "shoulders",
+      "aliases": [
+        "Front Plate Raise",
+        "Front Raise (Plate)"
+      ]
+    },
+    {
+      "key": "Power_Clean",
+      "name": "Power Clean",
+      "equipment": "barbell",
+      "muscle": "hamstrings",
+      "aliases": [
+        "Power Clean (Barbell)"
+      ]
+    },
+    {
+      "key": "Preacher_Curl",
+      "name": "Preacher Curl",
+      "equipment": "barbell",
+      "muscle": "biceps",
+      "aliases": [
+        "Preacher Curl (Barbell)",
+        "Preacher Curl (EZ Bar)"
+      ]
+    },
+    {
+      "key": "Pullups",
+      "name": "Pull-up",
+      "equipment": "bodyweight",
+      "muscle": "lats",
+      "aliases": [
+        "Pullups",
+        "Pull Up",
+        "Pullup",
+        "Pull Up (Bodyweight)"
+      ]
+    },
+    {
+      "key": "Push_Press",
+      "name": "Push Press",
+      "equipment": "barbell",
+      "muscle": "shoulders",
+      "aliases": [
+        "Push Press (Barbell)"
+      ]
+    },
+    {
+      "key": "Pushups",
+      "name": "Push-up",
+      "equipment": "bodyweight",
+      "muscle": "chest",
+      "aliases": [
+        "Pushups",
+        "Push Up",
+        "Pushup",
+        "Push Up (Bodyweight)"
+      ]
+    },
+    {
+      "key": "Rack_Pulls",
+      "name": "Rack Pull",
+      "equipment": "barbell",
+      "muscle": "lowerBack",
+      "aliases": [
+        "Rack Pulls",
+        "Rack Pull (Barbell)"
+      ]
+    },
+    {
+      "key": "Reverse_Crunch",
+      "name": "Reverse Crunch",
+      "equipment": "bodyweight",
+      "muscle": "abdominals",
+      "aliases": [
+        "Reverse Crunch (Bodyweight)"
+      ]
+    },
+    {
+      "key": "Reverse_Barbell_Curl",
+      "name": "Reverse Curl",
+      "equipment": "barbell",
+      "muscle": "biceps",
+      "aliases": [
+        "Reverse Barbell Curl",
+        "Reverse Curl (Barbell)"
+      ]
+    },
+    {
+      "key": "Reverse_Flyes",
+      "name": "Reverse Dumbbell Fly",
+      "equipment": "dumbbell",
+      "muscle": "shoulders",
+      "aliases": [
+        "Reverse Flyes",
+        "Reverse Fly (Dumbbell)",
+        "Rear Delt Fly (Dumbbell)"
+      ]
+    },
+    {
+      "key": "Dumbbell_Rear_Lunge",
+      "name": "Reverse Lunge",
+      "equipment": "dumbbell",
+      "muscle": "quadriceps",
+      "aliases": [
+        "Dumbbell Rear Lunge",
+        "Reverse Lunge (Dumbbell)"
+      ]
+    },
+    {
+      "key": "Reverse_Machine_Flyes",
+      "name": "Reverse Pec Deck",
+      "equipment": "machine",
+      "muscle": "shoulders",
+      "aliases": [
+        "Reverse Machine Flyes",
+        "Reverse Fly (Machine)",
+        "Rear Delt Fly (Machine)",
+        "Rear Delt Machine"
+      ]
+    },
+    {
+      "key": "Palms-Down_Wrist_Curl_Over_A_Bench",
+      "name": "Reverse Wrist Curl",
+      "equipment": "barbell",
+      "muscle": "forearms",
+      "aliases": [
+        "Palms-Down Wrist Curl Over A Bench",
+        "Reverse Wrist Curl (Barbell)"
+      ]
+    },
+    {
+      "key": "Reverse_Grip_Bent-Over_Rows",
+      "name": "Reverse-Grip Barbell Row",
+      "equipment": "barbell",
+      "muscle": "middleBack",
+      "aliases": [
+        "Reverse Grip Bent-Over Rows",
+        "Underhand Barbell Row",
+        "Bent Over Row - Underhand (Barbell)"
+      ]
+    },
+    {
+      "key": "Underhand_Cable_Pulldowns",
+      "name": "Reverse-Grip Lat Pulldown",
+      "equipment": "cable",
+      "muscle": "lats",
+      "aliases": [
+        "Underhand Cable Pulldowns",
+        "Lat Pulldown - Underhand (Cable)",
+        "Underhand Lat Pulldown"
+      ]
+    },
+    {
+      "key": "Reverse_Grip_Triceps_Pushdown",
+      "name": "Reverse-Grip Pushdown",
+      "equipment": "cable",
+      "muscle": "triceps",
+      "aliases": [
+        "Reverse Grip Triceps Pushdown",
+        "Reverse Grip Triceps Pushdown (Cable)"
+      ]
+    },
+    {
+      "key": "Romanian_Deadlift",
+      "name": "Romanian Deadlift",
+      "equipment": "barbell",
+      "muscle": "hamstrings",
+      "aliases": [
+        "Romanian Deadlift (Barbell)",
+        "RDL"
+      ]
+    },
+    {
+      "key": "Cable_Hammer_Curls_-_Rope_Attachment",
+      "name": "Rope Hammer Curl",
+      "equipment": "cable",
+      "muscle": "biceps",
+      "aliases": [
+        "Cable Hammer Curls - Rope Attachment",
+        "Hammer Curl (Cable)",
+        "Cable Hammer Curl"
+      ]
+    },
+    {
+      "key": "Triceps_Pushdown_-_Rope_Attachment",
+      "name": "Rope Pushdown",
+      "equipment": "cable",
+      "muscle": "triceps",
+      "aliases": [
+        "Triceps Pushdown - Rope Attachment",
+        "Triceps Rope Pushdown",
+        "Triceps Pushdown (Rope)",
+        "Rope Tricep Pushdown"
+      ]
+    },
+    {
+      "key": "Russian_Twist",
+      "name": "Russian Twist",
+      "equipment": "bodyweight",
+      "muscle": "abdominals",
+      "aliases": [
+        "Russian Twist (Bodyweight)"
+      ]
+    },
+    {
+      "key": "Seated_Cable_Rows",
+      "name": "Seated Cable Row",
+      "equipment": "cable",
+      "muscle": "middleBack",
+      "aliases": [
+        "Seated Cable Rows",
+        "Seated Row (Cable)",
+        "Cable Row",
+        "Seated Cable Row - V Grip (Cable)"
+      ]
+    },
+    {
+      "key": "Seated_Calf_Raise",
+      "name": "Seated Calf Raise",
+      "equipment": "machine",
+      "muscle": "calves",
+      "aliases": [
+        "Seated Calf Raise (Machine)"
+      ]
+    },
+    {
+      "key": "Seated_Dumbbell_Press",
+      "name": "Seated Dumbbell Press",
+      "equipment": "dumbbell",
+      "muscle": "shoulders",
+      "aliases": [
+        "Seated Shoulder Press (Dumbbell)",
+        "Seated Overhead Press (Dumbbell)"
+      ]
+    },
+    {
+      "key": "Seated_Leg_Curl",
+      "name": "Seated Leg Curl",
+      "equipment": "machine",
+      "muscle": "hamstrings",
+      "aliases": [
+        "Seated Leg Curl (Machine)"
+      ]
+    },
+    {
+      "key": "Seated_Barbell_Military_Press",
+      "name": "Seated Overhead Press",
+      "equipment": "barbell",
+      "muscle": "shoulders",
+      "aliases": [
+        "Seated Barbell Military Press",
+        "Seated Overhead Press (Barbell)",
+        "Seated Military Press"
+      ]
+    },
+    {
+      "key": "Side_Bridge",
+      "name": "Side Plank",
+      "equipment": "bodyweight",
+      "muscle": "abdominals",
+      "aliases": [
+        "Side Bridge"
+      ]
+    },
+    {
+      "key": "Seated_One-arm_Cable_Pulley_Rows",
+      "name": "Single-Arm Cable Row",
+      "equipment": "cable",
+      "muscle": "middleBack",
+      "aliases": [
+        "Seated One-arm Cable Pulley Rows",
+        "Single Arm Cable Row"
+      ]
+    },
+    {
+      "key": "One_Arm_Lat_Pulldown",
+      "name": "Single-Arm Lat Pulldown",
+      "equipment": "cable",
+      "muscle": "lats",
+      "aliases": [
+        "One Arm Lat Pulldown",
+        "Single Arm Lat Pulldown"
+      ]
+    },
+    {
+      "key": "Sit-Up",
+      "name": "Sit-up",
+      "equipment": "bodyweight",
+      "muscle": "abdominals",
+      "aliases": [
+        "Sit Up",
+        "Situp"
+      ]
+    },
+    {
+      "key": "EZ-Bar_Skullcrusher",
+      "name": "Skull Crusher",
+      "equipment": "barbell",
+      "muscle": "triceps",
+      "aliases": [
+        "EZ-Bar Skullcrusher",
+        "Skullcrusher (Barbell)",
+        "Skullcrusher (EZ Bar)",
+        "Lying Triceps Extension (EZ Bar)"
+      ]
+    },
+    {
+      "key": "Smith_Machine_Bench_Press",
+      "name": "Smith Machine Bench Press",
+      "equipment": "machine",
+      "muscle": "chest",
+      "aliases": [
+        "Bench Press (Smith Machine)"
+      ]
+    },
+    {
+      "key": "Smith_Machine_Calf_Raise",
+      "name": "Smith Machine Calf Raise",
+      "equipment": "machine",
+      "muscle": "calves",
+      "aliases": [
+        "Calf Raise (Smith Machine)"
+      ]
+    },
+    {
+      "key": "Smith_Machine_Incline_Bench_Press",
+      "name": "Smith Machine Incline Press",
+      "equipment": "machine",
+      "muscle": "chest",
+      "aliases": [
+        "Smith Machine Incline Bench Press",
+        "Incline Bench Press (Smith Machine)"
+      ]
+    },
+    {
+      "key": "Smith_Machine_Overhead_Shoulder_Press",
+      "name": "Smith Machine Shoulder Press",
+      "equipment": "machine",
+      "muscle": "shoulders",
+      "aliases": [
+        "Smith Machine Overhead Shoulder Press",
+        "Overhead Press (Smith Machine)"
+      ]
+    },
+    {
+      "key": "Smith_Machine_Squat",
+      "name": "Smith Machine Squat",
+      "equipment": "machine",
+      "muscle": "quadriceps",
+      "aliases": [
+        "Squat (Smith Machine)"
+      ]
+    },
+    {
+      "key": "Spider_Curl",
+      "name": "Spider Curl",
+      "equipment": "barbell",
+      "muscle": "biceps",
+      "aliases": [
+        "Spider Curl (Barbell)",
+        "Spider Curl (EZ Bar)"
+      ]
+    },
+    {
+      "key": "Barbell_Squat",
+      "name": "Squat",
+      "equipment": "barbell",
+      "muscle": "quadriceps",
+      "aliases": [
+        "Barbell Squat",
+        "Squat (Barbell)",
+        "Back Squat",
+        "Barbell Back Squat"
+      ]
+    },
+    {
+      "key": "Standing_Calf_Raises",
+      "name": "Standing Calf Raise",
+      "equipment": "machine",
+      "muscle": "calves",
+      "aliases": [
+        "Standing Calf Raises",
+        "Standing Calf Raise (Machine)",
+        "Calf Raise (Machine)"
+      ]
+    },
+    {
+      "key": "Standing_Leg_Curl",
+      "name": "Standing Leg Curl",
+      "equipment": "machine",
+      "muscle": "hamstrings",
+      "aliases": [
+        "Standing Leg Curl (Machine)"
+      ]
+    },
+    {
+      "key": "Dumbbell_Step_Ups",
+      "name": "Step-up",
+      "equipment": "dumbbell",
+      "muscle": "quadriceps",
+      "aliases": [
+        "Dumbbell Step Ups",
+        "Step Up (Dumbbell)",
+        "Dumbbell Step-up",
+        "Step Up"
+      ]
+    },
+    {
+      "key": "Stiff-Legged_Barbell_Deadlift",
+      "name": "Stiff-Legged Deadlift",
+      "equipment": "barbell",
+      "muscle": "hamstrings",
+      "aliases": [
+        "Stiff-Legged Barbell Deadlift",
+        "Straight Leg Deadlift (Barbell)",
+        "Stiff Leg Deadlift"
+      ]
+    },
+    {
+      "key": "Straight-Arm_Pulldown",
+      "name": "Straight-Arm Pulldown",
+      "equipment": "cable",
+      "muscle": "lats",
+      "aliases": [
+        "Straight Arm Lat Pulldown (Cable)",
+        "Straight Arm Pulldown"
+      ]
+    },
+    {
+      "key": "Sumo_Deadlift",
+      "name": "Sumo Deadlift",
+      "equipment": "barbell",
+      "muscle": "hamstrings",
+      "aliases": [
+        "Sumo Deadlift (Barbell)"
+      ]
+    },
+    {
+      "key": "T-Bar_Row_with_Handle",
+      "name": "T-Bar Row",
+      "equipment": "barbell",
+      "muscle": "middleBack",
+      "aliases": [
+        "T-Bar Row with Handle",
+        "T Bar Row"
+      ]
+    },
+    {
+      "key": "Trap_Bar_Deadlift",
+      "name": "Trap Bar Deadlift",
+      "equipment": "barbell",
+      "muscle": "quadriceps",
+      "aliases": [
+        "Deadlift (Trap bar)",
+        "Hex Bar Deadlift"
+      ]
+    },
+    {
+      "key": "Dips_-_Triceps_Version",
+      "name": "Triceps Dip",
+      "equipment": "bodyweight",
+      "muscle": "triceps",
+      "aliases": [
+        "Dips - Triceps Version",
+        "Triceps Dip (Bodyweight)",
+        "Tricep Dips"
+      ]
+    },
+    {
+      "key": "Triceps_Pushdown",
+      "name": "Triceps Pushdown",
+      "equipment": "cable",
+      "muscle": "triceps",
+      "aliases": [
+        "Triceps Pushdown (Cable - Straight Bar)",
+        "Tricep Pushdown",
+        "Cable Pushdown"
+      ]
+    },
+    {
+      "key": "Upright_Barbell_Row",
+      "name": "Upright Row",
+      "equipment": "barbell",
+      "muscle": "shoulders",
+      "aliases": [
+        "Upright Barbell Row",
+        "Upright Row (Barbell)",
+        "Barbell Upright Row"
+      ]
+    },
+    {
+      "key": "Bodyweight_Walking_Lunge",
+      "name": "Walking Lunge",
+      "equipment": "bodyweight",
+      "muscle": "quadriceps",
+      "aliases": [
+        "Bodyweight Walking Lunge",
+        "Walking Lunge (Bodyweight)",
+        "Walking Lunge (Dumbbell)"
+      ]
+    },
+    {
+      "key": "Weighted_Pull_Ups",
+      "name": "Weighted Pull-up",
+      "equipment": "other",
+      "muscle": "lats",
+      "aliases": [
+        "Weighted Pull Ups",
+        "Pull Up (Weighted)",
+        "Weighted Pull Up"
+      ]
+    },
+    {
+      "key": "Wide-Grip_Barbell_Bench_Press",
+      "name": "Wide-Grip Bench Press",
+      "equipment": "barbell",
+      "muscle": "chest",
+      "aliases": [
+        "Wide-Grip Barbell Bench Press",
+        "Bench Press - Wide Grip (Barbell)"
+      ]
+    },
+    {
+      "key": "Palms-Up_Barbell_Wrist_Curl_Over_A_Bench",
+      "name": "Wrist Curl",
+      "equipment": "barbell",
+      "muscle": "forearms",
+      "aliases": [
+        "Palms-Up Barbell Wrist Curl Over A Bench",
+        "Wrist Curl (Barbell)"
+      ]
+    }
+  ]
+}

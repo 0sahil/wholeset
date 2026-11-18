@@ -77,7 +77,7 @@ public struct HealthWorkoutSummary: Equatable, Sendable {
     }
 }
 
-extension SchemaV1.Session {
+extension Session {
     /// Copies the HealthKit results onto the session. Values that are `nil` in `summary`
     /// leave the stored ones untouched. Does not save.
     public func apply(_ summary: HealthWorkoutSummary, at date: Date = .now) {

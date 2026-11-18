@@ -25,6 +25,9 @@ let package = Package(
     targets: [
         .target(
             name: "WholesetKit",
+            // Built-in exercise library, curated from free-exercise-db (public domain);
+            // see Scripts/curate-exercise-library.py.
+            resources: [.copy("Library/exercises.json")],
             swiftSettings: swiftSettings
         ),
         .testTarget(

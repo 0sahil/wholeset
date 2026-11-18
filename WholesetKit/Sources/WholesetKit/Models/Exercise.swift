@@ -3,7 +3,7 @@
 import Foundation
 import SwiftData
 
-extension SchemaV1 {
+extension SchemaV2 {
     /// A movement that can be logged: a built-in library entry or a custom exercise.
     @Model
     public final class Exercise {
@@ -24,6 +24,10 @@ extension SchemaV1 {
         public var defaultRestSeconds: Int?
         /// Raw storage for ``aliases``: one alias per line.
         public var aliasesText: String = ""
+        /// The built-in library entry this exercise is (``ExerciseLibrary/Entry/key``);
+        /// `nil` for exercises the user created. Several rows with the same key are sync
+        /// duplicates and are merged by ``StoreMaintenance``.
+        public var libraryKey: String?
 
         /// Exercises offered when swapping this one out mid-workout.
         ///
@@ -58,7 +62,7 @@ extension SchemaV1 {
     }
 }
 
-extension SchemaV1.Exercise {
+extension Exercise {
     /// The equipment type. Unknown stored values read as ``Equipment/other``.
     public var equipment: Equipment {
         get { Equipment(persisted: equipmentRaw) }

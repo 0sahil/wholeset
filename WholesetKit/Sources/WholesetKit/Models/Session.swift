@@ -3,7 +3,7 @@
 import Foundation
 import SwiftData
 
-extension SchemaV1 {
+extension SchemaV2 {
     /// A workout: logged live on a device or imported from another app.
     @Model
     public final class Session {
@@ -46,7 +46,7 @@ extension SchemaV1 {
     }
 }
 
-extension SchemaV1.Session {
+extension Session {
     /// Where the session came from. Unknown stored values read as ``Source/watch``.
     public var source: Source {
         get { Source(persisted: sourceRaw) }
@@ -54,7 +54,7 @@ extension SchemaV1.Session {
     }
 
     /// ``entries`` in display order.
-    public var sortedEntries: [SchemaV1.SessionExercise] {
+    public var sortedEntries: [SessionExercise] {
         (entries ?? []).sortedByOrder()
     }
 }

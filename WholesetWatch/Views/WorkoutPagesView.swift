@@ -88,7 +88,7 @@ extension View {
 struct PageCrown: ViewModifier {
     let binding: Binding<Int>
     let range: ClosedRange<Int>
-    let sensitivity: DigitalCrownRotationalSensitivity
+    let profile: CrownProfile
     let onIdle: () -> Void
     let focus: CrownFocus
 
@@ -102,11 +102,23 @@ struct PageCrown: ViewModifier {
                 from: range.lowerBound,
                 through: range.upperBound,
                 by: 1,
-                sensitivity: sensitivity,
+                sensitivity: DigitalCrownRotationalSensitivity(profile.rate),
                 isContinuous: false,
-                isHapticFeedbackEnabled: true,
+                // With several detents per step the tile editor plays one click per step instead.
+                isHapticFeedbackEnabled: profile.usesSystemHaptics,
                 onIdle: onIdle
             )
+    }
+}
+
+extension DigitalCrownRotationalSensitivity {
+    /// The system sensitivity for a WholesetKit Crown rate.
+    init(_ rate: CrownRate) {
+        switch rate {
+        case .low: self = .low
+        case .medium: self = .medium
+        case .high: self = .high
+        }
     }
 }
 
@@ -142,7 +154,11 @@ private struct ExerciseTab: View {
             }
         }
         .focusScope(crownScope)
-        .onAppear(perform: applyInitialSelection)
+        .onAppear {
+            // Settings changed on iPhone apply from the next time this page appears at the latest.
+            controller.refreshSettings()
+            applyInitialSelection()
+        }
         .onDisappear(perform: editor.release)
         .onChange(of: controller.page) { _, _ in
             editor.release()
@@ -207,19 +223,20 @@ private struct ExerciseTab: View {
 
     // MARK: Crown
 
-    /// With a tile selected the Crown's detent *is* the edit's value, in a range that only
-    /// moves while the Crown is idle (see `CrownEdit`). With none it picks the exercise.
+    /// With a tile selected the Crown's detent is the edit's position (its value, at one
+    /// detent per step), in a range that only moves while the Crown is idle (see `CrownEdit`).
+    /// Speed and detents per step come from the synced Crown sensitivity, taken when the tile
+    /// was selected. With no tile selected the Crown picks the exercise.
     private func pageCrown(engine: WorkoutEngine, focus: CrownFocus) -> PageCrown {
-        if let selection = editor.selection, let edit = editor.edit {
+        if let edit = editor.edit, let profile = editor.profile {
             let editor = editor
             return PageCrown(
                 binding: Binding(
-                    get: { editor.edit?.value ?? edit.value },
+                    get: { editor.edit?.position ?? edit.position },
                     set: { editor.crownMoved(to: $0) }
                 ),
                 range: edit.crownRange,
-                // Weight: one gentle movement per 0.5 kg / 1 lb step, stepped slowly and precisely.
-                sensitivity: selection == .weight ? .low : .medium,
+                profile: profile,
                 onIdle: editor.crownIdle,
                 focus: focus
             )
@@ -234,7 +251,7 @@ private struct ExerciseTab: View {
             ),
             // Never an empty range; extra detents past the last exercise are clamped by the engine.
             range: 0...max(1, engine.entries.count - 1),
-            sensitivity: .low,
+            profile: .exerciseNavigation,
             onIdle: editor.crownIdle,
             focus: focus
         )

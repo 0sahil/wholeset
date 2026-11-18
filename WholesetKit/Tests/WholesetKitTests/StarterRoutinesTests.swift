@@ -7,23 +7,32 @@ import Testing
 
 @Suite("Starter routines")
 struct StarterRoutinesTests {
-    @Test func seedsPushPullLegsInOrder() throws {
+    private let now = Date(timeIntervalSince1970: 1_800_000_000)
+
+    @Test func seedsPushPullLegsInOrderAndRecordsTheDecision() throws {
         let context = try makeInMemoryContext()
-        #expect(try StarterRoutines.seedIfNeeded(in: context))
+        let created = try StarterRoutines.seed(in: context, now: now)
+        #expect(created.count == 3)
         let routines = TodayPlanResolver.sortedRoutines(try context.all(Routine.self))
         #expect(routines.map(\.name) == ["Push", "Pull", "Legs"])
         #expect(routines.map(\.sortIndex) == [0, 1, 2])
+        #expect(routines.map(\.seedKey) == ["starter.push", "starter.pull", "starter.legs"])
+        #expect(routines.allSatisfy { $0.createdAt == now && $0.updatedAt == now })
+        #expect(try AppSettings.current(in: context).starterRoutinesDecidedAt == now)
         #expect(!context.hasChanges)
     }
 
-    @Test func templatesHaveRealisticTargets() {
+    @Test func templatesHaveRealisticTargetsAndUniqueKeys() {
         #expect(StarterRoutines.templates.count == 3)
+        #expect(Set(StarterRoutines.templates.map(\.key)).count == 3)
         for template in StarterRoutines.templates {
+            #expect(StarterRoutines.template(forKey: template.key) == template)
             #expect((4...6).contains(template.items.count))
             for item in template.items {
                 #expect((2...5).contains(item.sets))
                 #expect(item.repLow >= 1 && item.repLow <= item.repHigh && item.repHigh <= 20)
                 #expect((30...300).contains(item.restSeconds))
+                #expect(RoutineRules.normalizedRest(item.restSeconds) == item.restSeconds)
             }
         }
         let names = StarterRoutines.templates.flatMap(\.items).map(\.exerciseName)
@@ -32,9 +41,9 @@ struct StarterRoutinesTests {
         #expect(Set(names.map { $0.lowercased() }).count == names.count)
     }
 
-    @Test func itemsCarryTemplateValuesAndExercises() throws {
+    @Test func itemsCarryTemplateValuesAndLibraryExercises() throws {
         let context = try makeInMemoryContext()
-        try StarterRoutines.seedIfNeeded(in: context)
+        try StarterRoutines.seed(in: context, now: now)
         let routines = TodayPlanResolver.sortedRoutines(try context.all(Routine.self))
         for (routine, template) in zip(routines, StarterRoutines.templates) {
             let items = routine.sortedItems
@@ -44,6 +53,7 @@ struct StarterRoutinesTests {
                 #expect(item.exercise?.equipment == spec.equipment)
                 #expect(item.exercise?.primaryMuscle == spec.muscle)
                 #expect(item.exercise?.isCustom == false)
+                #expect(item.exercise?.libraryKey != nil)
                 #expect(item.targetSets == spec.sets)
                 #expect(item.repLow == spec.repLow)
                 #expect(item.repHigh == spec.repHigh)
@@ -54,23 +64,16 @@ struct StarterRoutinesTests {
         #expect(try context.count(Exercise.self) == itemCount)
     }
 
-    @Test func isIdempotent() throws {
+    @Test func seedingAgainAfterTheDecisionAddsPlainRoutines() throws {
         let context = try makeInMemoryContext()
-        try StarterRoutines.seedIfNeeded(in: context)
+        try StarterRoutines.seed(in: context, now: now)
         let exercises = try context.count(Exercise.self)
-        #expect(try StarterRoutines.seedIfNeeded(in: context) == false)
-        #expect(try context.count(Routine.self) == 3)
-        #expect(try context.count(RoutineItem.self) == 15)
+        let again = try StarterRoutines.seed(in: context, now: now.addingTimeInterval(60))
+        #expect(again.allSatisfy { $0.seedKey == nil })
+        #expect(again.map(\.sortIndex) == [3, 4, 5])
+        #expect(try context.count(Routine.self) == 6)
         #expect(try context.count(Exercise.self) == exercises)
-    }
-
-    @Test func doesNothingWhenAnyRoutineExists() throws {
-        let context = try makeInMemoryContext()
-        context.insert(Routine(name: "Mine"))
-        try context.save()
-        #expect(try StarterRoutines.seedIfNeeded(in: context) == false)
-        #expect(try context.all(Routine.self).map(\.name) == ["Mine"])
-        #expect(try context.count(Exercise.self) == 0)
+        #expect(try AppSettings.current(in: context).starterRoutinesDecidedAt == now)
     }
 
     @Test func reusesExistingExercisesIgnoringCase() throws {
@@ -80,9 +83,9 @@ struct StarterRoutinesTests {
         context.insertAll(bench, pulldown)
         try context.save()
 
-        try StarterRoutines.seedIfNeeded(in: context)
+        try StarterRoutines.seed(in: context, now: now)
 
-        let benches = try context.all(Exercise.self).filter { StarterRoutines.normalizedName($0.name) == "bench press" }
+        let benches = try context.all(Exercise.self).filter { ExerciseName.normalized($0.name) == "bench press" }
         #expect(benches.count == 1)
         #expect(benches.first === bench)
         #expect(bench.isCustom)
@@ -100,9 +103,23 @@ struct StarterRoutinesTests {
         context.insertAll(archived, active)
         try context.save()
 
-        try StarterRoutines.seedIfNeeded(in: context)
+        try StarterRoutines.seed(in: context, now: now)
 
         #expect(active.routineItems?.count == 1)
         #expect(archived.routineItems?.isEmpty ?? true)
+    }
+
+    @Test func recognisesRoutinesSeededByTheFirstRelease() throws {
+        let context = try makeInMemoryContext()
+        try StarterRoutines.seed(in: context, now: now)
+        let push = try #require(try context.all(Routine.self).first { $0.name == "Push" })
+        let template = try #require(StarterRoutines.template(forKey: "starter.push"))
+        #expect(!StarterRoutines.isLegacyCopy(push, of: template))
+        push.seedKey = nil
+        #expect(StarterRoutines.isLegacyCopy(push, of: template))
+        let other = Exercise(name: "Something Else")
+        context.insert(other)
+        push.sortedItems.last?.exercise = other
+        #expect(!StarterRoutines.isLegacyCopy(push, of: template))
     }
 }

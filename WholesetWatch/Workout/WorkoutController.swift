@@ -84,6 +84,10 @@ final class WorkoutController {
     private(set) var clock: WorkoutClock?
     private(set) var rest: RestTimer?
     private(set) var unit: WeightUnit = .kg
+    /// How the Crown edits the weight tile (from the synced settings).
+    private(set) var weightCrown: CrownProfile = .weight(.normal)
+    /// How the Crown edits the reps tile (from the synced settings).
+    private(set) var repsCrown: CrownProfile = .reps(.normal)
     private(set) var recoveryGraceExpired = false
     /// The visible workout page.
     var page: WorkoutPage = .exercise
@@ -104,11 +108,14 @@ final class WorkoutController {
     @ObservationIgnored private var restTask: Task<Void, Never>?
     @ObservationIgnored private var isSceneActive = true
     @ObservationIgnored private var defaultRestSeconds = RestTimer.fallbackSeconds
+    /// Whether a weight or reps tile is being edited; settings are not reloaded meanwhile.
+    @ObservationIgnored private var isEditingTile = false
+    @ObservationIgnored private var settingsReloadPending = false
 
     private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "app.wholeset.watchkitapp", category: "Workout")
 
-    /// Creates the controller and, unless `bootstrap` is `false`, seeds the starter
-    /// routines and restores a workout left running by a crash or reboot.
+    /// Creates the controller and, unless `bootstrap` is `false`, restores a workout left
+    /// running by a crash or reboot. Seeding is the `StoreCoordinator`'s job.
     init(
         context: ModelContext,
         health: any WorkoutSessionManaging,
@@ -134,14 +141,17 @@ final class WorkoutController {
     /// Whether the workout clock (and the Health session) is paused.
     var isPaused: Bool { clock?.isPaused ?? false }
 
+    /// Whether a workout is starting, running or waiting to be restored.
+    var isWorkoutRunning: Bool {
+        switch phase {
+        case .home, .summary: engine != nil
+        case .preparing, .countdown, .active, .restored: true
+        }
+    }
+
     // MARK: - Launch
 
     private func bootstrap() {
-        do {
-            try StarterRoutines.seedIfNeeded(in: context)
-        } catch {
-            logger.error("Could not seed starter routines: \(error, privacy: .public)")
-        }
         do {
             if let session = try WorkoutRecovery.resolveInProgressSession(in: context) {
                 restore(session)
@@ -161,10 +171,34 @@ final class WorkoutController {
     private func loadSettings() {
         do {
             let settings = try AppSettings.current(in: context)
-            unit = settings.unit
+            if unit != settings.unit { unit = settings.unit }
+            let weight = CrownProfile.weight(settings.weightCrownSensitivity)
+            if weightCrown != weight { weightCrown = weight }
+            let reps = CrownProfile.reps(settings.repsCrownSensitivity)
+            if repsCrown != reps { repsCrown = reps }
             defaultRestSeconds = settings.defaultRestSeconds
         } catch {
             logger.error("Could not read settings: \(error, privacy: .public)")
+        }
+    }
+
+    /// Reads the settings again, for example after changes arrived from iCloud. While a
+    /// tile is being edited the reload waits until it is released, so units and Crown
+    /// speed never change under a turn.
+    func refreshSettings() {
+        guard !isEditingTile else {
+            settingsReloadPending = true
+            return
+        }
+        settingsReloadPending = false
+        loadSettings()
+    }
+
+    /// Called by the tile editor when a tile is selected or released.
+    func tileEditingChanged(isEditing: Bool) {
+        isEditingTile = isEditing
+        if !isEditing, settingsReloadPending {
+            refreshSettings()
         }
     }
 

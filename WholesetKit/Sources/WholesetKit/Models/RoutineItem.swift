@@ -3,7 +3,7 @@
 import Foundation
 import SwiftData
 
-extension SchemaV1 {
+extension SchemaV2 {
     /// One exercise slot in a routine, with its set and rep targets.
     @Model
     public final class RoutineItem {
@@ -36,4 +36,4 @@ extension SchemaV1 {
     }
 }
 
-extension SchemaV1.RoutineItem: OrderedChild {}
+extension RoutineItem: OrderedChild {}

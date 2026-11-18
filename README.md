@@ -2,7 +2,7 @@
 
 A workout tracker for Apple Watch and iPhone. Log every set from your wrist, sync workouts to Apple Fitness, and keep your full history with no limits.
 
-**Status:** early development. The Watch app can run a workout from a built-in starter routine, log sets, time rests and save the workout to Apple Health. The iPhone app is still a skeleton.
+**Status:** early development. The Watch app runs a workout, logs sets, times rests and saves the workout to Apple Health. The iPhone app plans: routines, a weekly plan, an exercise library and settings, all synced to the Watch through iCloud. History and import are still to come.
 
 ## What it is
 
@@ -23,8 +23,9 @@ A workout tracker for Apple Watch and iPhone. Log every set from your wrist, syn
 |---|---|
 | `Wholeset/` | iOS app target |
 | `WholesetWatch/` | watchOS app target (embedded in the iOS app, also runs on its own) |
-| `WholesetKit/` | Swift package with the shared code: SwiftData models, store setup and the workout logic (units, today's plan, rest timer, workout engine, recovery) |
+| `WholesetKit/` | Swift package with the shared code: versioned SwiftData models and migrations, store setup, sync maintenance and status, the exercise library, and the planning and workout logic |
 | `Config/` | Build settings as `.xcconfig` files |
+| `Scripts/` | `curate-exercise-library.py`, which builds the bundled exercise library |
 
 The Xcode project uses folder-synchronized groups, so adding a file to one of the target folders adds it to that target without editing the project file.
 
@@ -46,12 +47,15 @@ xcodebuild -project Wholeset.xcodeproj -scheme WholesetWatch \
 
 Simulator builds use a local store; CloudKit sync is only enabled on device builds.
 
-### Watch demo screens (Debug builds only)
+### Demo screens (Debug builds only)
 
-To look at a Watch screen without running a workout, launch the Watch app with `-WholesetDemo <screen>`.
-It then opens straight into that screen with an in-memory store, sample data and a fake HealthKit manager.
-Screens: `home`, `countdown`, `exercise`, `exercise-selected`, `exercise-logged`, `done`, `done-long`, `rest`, `menu`, `stats`, `end-confirm`,
-`summary`, `restored`, `restored-nohealth`. Add `-WholesetDemoUnit lb` for pounds. Release builds do not contain this code.
+To look at a screen without setting up data, launch either app with `-WholesetDemo <screen>`.
+It then opens straight into that screen with an in-memory store and sample data (on the Watch also a fake HealthKit manager).
+Add `-WholesetDemoUnit lb` for pounds. Release builds do not contain this code.
+
+- Watch: `home`, `home-syncing`, `countdown`, `exercise`, `exercise-selected`, `exercise-logged`, `done`, `done-long`, `rest`, `menu`, `stats`,
+  `end-confirm`, `summary`, `restored`, `restored-nohealth`.
+- iPhone: `welcome`, `units`, `health`, `plan`, `plan-empty`, `routine-editor`, `exercise-picker`, `exercises`, `exercise-detail`, `settings`.
 
 ## Tests
 
@@ -64,3 +68,5 @@ cd WholesetKit && swift test
 ## License
 
 [GPL-3.0-or-later](LICENSE).
+
+The built-in exercise library is curated from [free-exercise-db](https://github.com/yuhonas/free-exercise-db), which is in the public domain (Unlicense).

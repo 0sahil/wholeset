@@ -3,7 +3,7 @@
 import Foundation
 import SwiftData
 
-extension SchemaV1 {
+extension SchemaV2 {
     /// One set of an exercise: planned until ``completedAt`` is set.
     @Model
     public final class SetLog {
@@ -37,4 +37,4 @@ extension SchemaV1 {
     }
 }
 
-extension SchemaV1.SetLog: OrderedChild {}
+extension SetLog: OrderedChild {}

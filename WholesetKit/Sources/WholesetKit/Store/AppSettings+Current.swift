@@ -3,7 +3,7 @@
 import Foundation
 import SwiftData
 
-extension SchemaV1.AppSettings {
+extension AppSettings {
     /// Returns the single settings row, creating it if none exists.
     ///
     /// CloudKit sync can produce duplicates, typically when a newly set-up device
@@ -13,14 +13,16 @@ extension SchemaV1.AppSettings {
     /// - it takes its values from the most recently *edited* row: rows never edited
     ///   (`updatedAt == createdAt`) rank below edited ones, then by `updatedAt`,
     ///   then `id`. A fresh default row therefore never overrides real choices;
+    /// - ``starterRoutinesDecidedAt`` becomes the earliest date any row has, because the
+    ///   first decision made on any device is the one that stands;
     /// - all other rows are deleted.
     ///
     /// Saves the context when it creates or collapses rows.
-    public static func current(in context: ModelContext) throws -> SchemaV1.AppSettings {
-        let rows = try context.fetch(FetchDescriptor<SchemaV1.AppSettings>())
+    public static func current(in context: ModelContext) throws -> AppSettings {
+        let rows = try context.fetch(FetchDescriptor<AppSettings>())
 
         guard let survivor = rows.min(by: isOlder) else {
-            let created = SchemaV1.AppSettings()
+            let created = AppSettings()
             context.insert(created)
             try context.save()
             return created
@@ -30,6 +32,7 @@ extension SchemaV1.AppSettings {
         if let source = rows.max(by: hasOlderValues), source !== survivor {
             survivor.copyValues(from: source)
         }
+        survivor.starterRoutinesDecidedAt = rows.compactMap(\.starterRoutinesDecidedAt).min()
         for row in rows where row !== survivor {
             context.delete(row)
         }
@@ -37,22 +40,25 @@ extension SchemaV1.AppSettings {
         return survivor
     }
 
-    /// Whether any setting was changed after the row was created.
-    private var wasEdited: Bool { updatedAt > createdAt }
+    /// Whether any setting was changed after the row was created (for example the unit
+    /// chosen on another device and synced).
+    public var wasEdited: Bool { updatedAt > createdAt }
 
     /// Copies every user-facing value. New settings properties must be added here.
-    private func copyValues(from other: SchemaV1.AppSettings) {
+    private func copyValues(from other: AppSettings) {
         unitRaw = other.unitRaw
         defaultRestSeconds = other.defaultRestSeconds
+        weightCrownSensitivityRaw = other.weightCrownSensitivityRaw
+        repsCrownSensitivityRaw = other.repsCrownSensitivityRaw
         updatedAt = other.updatedAt
     }
 
-    private static func isOlder(_ lhs: SchemaV1.AppSettings, _ rhs: SchemaV1.AppSettings) -> Bool {
+    private static func isOlder(_ lhs: AppSettings, _ rhs: AppSettings) -> Bool {
         if lhs.createdAt != rhs.createdAt { return lhs.createdAt < rhs.createdAt }
         return lhs.id.uuidString < rhs.id.uuidString
     }
 
-    private static func hasOlderValues(_ lhs: SchemaV1.AppSettings, _ rhs: SchemaV1.AppSettings) -> Bool {
+    private static func hasOlderValues(_ lhs: AppSettings, _ rhs: AppSettings) -> Bool {
         if lhs.wasEdited != rhs.wasEdited { return !lhs.wasEdited }
         if lhs.updatedAt != rhs.updatedAt { return lhs.updatedAt < rhs.updatedAt }
         return lhs.id.uuidString < rhs.id.uuidString

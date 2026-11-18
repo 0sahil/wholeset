@@ -3,8 +3,12 @@
 import Foundation
 import SwiftData
 
-extension SchemaV1 {
+extension SchemaV2 {
     /// A reusable workout template: an ordered list of exercises with targets.
+    ///
+    /// Code that edits a routine or one of its items sets the routine's `updatedAt`:
+    /// a routine whose `updatedAt` still equals its `createdAt` counts as never edited,
+    /// which lets sync duplicates of an untouched starter routine be merged safely.
     @Model
     public final class Routine {
         public var id: UUID = UUID()
@@ -15,6 +19,9 @@ extension SchemaV1 {
         public var notes: String = ""
         /// Position in the routines list (CloudKit has no ordered relationships).
         public var sortIndex: Int = 0
+        /// The starter template this routine was seeded from (``StarterRoutines/Template/key``);
+        /// `nil` for routines the user made.
+        public var seedKey: String?
 
         /// The routine's exercise slots. Deleted with the routine. Use ``sortedItems``.
         @Relationship(deleteRule: .cascade, inverse: \RoutineItem.routine)
@@ -37,9 +44,9 @@ extension SchemaV1 {
     }
 }
 
-extension SchemaV1.Routine {
+extension Routine {
     /// ``items`` in display order.
-    public var sortedItems: [SchemaV1.RoutineItem] {
+    public var sortedItems: [RoutineItem] {
         (items ?? []).sortedByOrder()
     }
 }

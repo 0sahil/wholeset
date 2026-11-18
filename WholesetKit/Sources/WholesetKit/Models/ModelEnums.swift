@@ -71,3 +71,13 @@ public enum WeightUnit: String, PersistedEnum {
 
     public static var fallback: WeightUnit { .kg }
 }
+
+/// How fast the Watch's Digital Crown changes a value. See ``CrownProfile`` for what
+/// each level means for the weight and reps tiles.
+public enum CrownSensitivity: String, PersistedEnum {
+    case slow
+    case normal
+    case fast
+
+    public static var fallback: CrownSensitivity { .normal }
+}

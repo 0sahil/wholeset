@@ -5,18 +5,22 @@ import SwiftUI
 import WholesetKit
 
 /// The Watch home screen: today's routine (or rest day), other routines, empty workout.
+///
+/// The queries follow the store, so routines and plan changes arriving from iCloud while
+/// the app runs show up here without a relaunch.
 struct HomeView: View {
     let controller: WorkoutController
 
     @Query private var routines: [Routine]
     @Query private var planDays: [WeekPlanDay]
+    @Environment(StoreCoordinator.self) private var store
 
     var body: some View {
         let today = Date.now
         let plan = TodayPlanResolver.resolve(planDays: planDays, routines: routines, on: today, calendar: .current)
         NavigationStack {
             List {
-                TodayCard(plan: plan, date: today) { routine in
+                TodayCard(plan: plan, date: today, isLookingInICloud: store.isWaitingForStarterDecision) { routine in
                     controller.start(routine)
                 }
                 .listRowBackground(Color.clear)
@@ -46,6 +50,8 @@ struct HomeView: View {
 private struct TodayCard: View {
     let plan: TodayPlan
     let date: Date
+    /// The Watch is waiting for iCloud before it decides about starter routines.
+    let isLookingInICloud: Bool
     let start: (Routine) -> Void
 
     var body: some View {
@@ -70,6 +76,16 @@ private struct TodayCard: View {
                     .font(.title3.weight(.semibold))
                 if let next {
                     Text(nextLabel(next))
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            case .noRoutines where isLookingInICloud:
+                Text("No routines yet")
+                    .font(.title3.weight(.semibold))
+                HStack(spacing: 6) {
+                    ProgressView()
+                        .fixedSize()
+                    Text("Checking iCloud for your routines…")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }

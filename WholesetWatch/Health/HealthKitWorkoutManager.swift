@@ -37,20 +37,12 @@ final class HealthKitWorkoutManager: WorkoutSessionManaging {
     /// How long `end` waits for the session to confirm it stopped before saving anyway.
     private static let stopTimeout: Duration = .seconds(5)
 
-    private static var shareTypes: Set<HKSampleType> {
-        [HKObjectType.workoutType(), HKQuantityType(.activeEnergyBurned), HKQuantityType(.heartRate)]
-    }
-
-    private static var readTypes: Set<HKObjectType> {
-        [HKQuantityType(.heartRate), HKQuantityType(.activeEnergyBurned)]
-    }
-
     // MARK: - Authorization
 
     func requestAuthorization() async {
         guard HKHealthStore.isHealthDataAvailable() else { return }
         do {
-            try await store.requestAuthorization(toShare: Self.shareTypes, read: Self.readTypes)
+            try await store.requestAuthorization(toShare: HealthAccess.shareTypes, read: HealthAccess.readTypes)
         } catch {
             logger.error("Health authorization failed: \(error, privacy: .public)")
         }

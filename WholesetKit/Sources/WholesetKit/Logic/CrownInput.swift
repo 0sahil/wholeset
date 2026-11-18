@@ -37,17 +37,28 @@ public struct CrownWindow: Sendable, Equatable {
 /// A Digital Crown edit of one whole-number value (weight steps or reps), held in memory
 /// and written to the store only when ``hasUnsavedChange`` says so.
 ///
-/// The Crown's detent binding *is* ``value``: what the Crown reports is what the screen
-/// shows, so the two can never disagree. The Crown range is a ``CrownWindow`` around
-/// ``anchor``, and the anchor only moves when the Crown is idle (``recentre()``) or after a
-/// VoiceOver step, never during a turn. A turn can therefore never see its range change
-/// under it; a single turn reaches at most half a window from where it started, and the
-/// next turn continues from there.
+/// The Crown's detent binding is ``position``. With one detent per step (the default, and
+/// every Normal setting) the position *is* ``value``: what the Crown reports is what the
+/// screen shows, so the two can never disagree. With more detents per step (see
+/// ``CrownProfile``) the value moves one step for every ``detentsPerStep`` detents turned
+/// in the same direction, and the Crown range keeps the same number of detents, so the
+/// value moves proportionally slower.
+///
+/// The Crown range is a ``CrownWindow`` around ``anchor``, and the anchor only moves when
+/// the Crown is idle (``recentre()``) or after a VoiceOver step, never during a turn. A
+/// turn can therefore never see its range change under it; a single turn reaches at most
+/// half a window from where it started, and the next turn continues from there.
 public struct CrownEdit: Sendable, Equatable {
-    /// The window of Crown detents; its bounds are every value the edit can take.
+    /// The window of values the Crown can reach around the anchor; its bounds are every
+    /// value the edit can take.
     public let window: CrownWindow
+    /// Crown detents per value step (1 or more).
+    public let detentsPerStep: Int
     /// The value on screen.
     public private(set) var value: Int
+    /// The Crown's detent position: ``value`` × ``detentsPerStep`` plus any part of a step
+    /// turned so far.
+    public private(set) var position: Int
     /// The value last written to the store; `nil` when the store has none (for example a
     /// set with no weight yet).
     public private(set) var savedValue: Int?
@@ -63,19 +74,25 @@ public struct CrownEdit: Sendable, Equatable {
     ///   - isStored: Whether `value` is what the store holds. When `false`, the edit writes
     ///     nothing unless the user moves the value.
     ///   - bounds: Every value the edit can take; `value` is clamped into it.
-    ///   - span: Detents in the Crown window (see ``CrownWindow``).
-    public init(value: Int, isStored: Bool, bounds: ClosedRange<Int>, span: Int) {
-        let window = CrownWindow(bounds: bounds, span: span)
+    ///   - span: Detents in the Crown window (see ``CrownWindow``). The window covers
+    ///     `span / detentsPerStep` values, so its width in detents stays the same.
+    ///   - detentsPerStep: Crown detents per value step; values below 1 are treated as 1.
+    public init(value: Int, isStored: Bool, bounds: ClosedRange<Int>, span: Int, detentsPerStep: Int = 1) {
+        let detentsPerStep = max(1, detentsPerStep)
+        let window = CrownWindow(bounds: bounds, span: max(1, span / detentsPerStep))
         let start = window.clamp(value)
         self.window = window
+        self.detentsPerStep = detentsPerStep
         self.value = start
+        self.position = start * detentsPerStep
         self.savedValue = isStored ? start : nil
         self.anchor = start
     }
 
-    /// The range to give the Crown now.
+    /// The range of detent positions to give the Crown now.
     public var crownRange: ClosedRange<Int> {
-        window.range(around: anchor)
+        let values = window.range(around: anchor)
+        return (values.lowerBound * detentsPerStep)...(values.upperBound * detentsPerStep)
     }
 
     /// Whether ``value`` differs from what the store holds and should be written.
@@ -91,11 +108,24 @@ public struct CrownEdit: Sendable, Equatable {
 
     /// The Crown reported detent `position`. Positions outside ``crownRange`` are clamped.
     ///
+    /// The value follows only whole steps: it moves up once the position reaches the next
+    /// step's first detent, and down once it reaches the previous step's, so turning back
+    /// and forth within a step never changes it.
+    ///
     /// - Returns: Whether ``value`` changed.
     @discardableResult
     public mutating func crownMoved(to position: Int) -> Bool {
         let range = crownRange
-        let next = min(max(position, range.lowerBound), range.upperBound)
+        let clamped = min(max(position, range.lowerBound), range.upperBound)
+        self.position = clamped
+        let detents = detentsPerStep
+        var next = value
+        if clamped >= (value + 1) * detents {
+            next = Self.floorDivide(clamped, by: detents)
+        } else if clamped <= (value - 1) * detents {
+            next = -Self.floorDivide(-clamped, by: detents)
+        }
+        next = window.clamp(next)
         guard next != value else { return false }
         value = next
         hasMoved = true
@@ -112,22 +142,103 @@ public struct CrownEdit: Sendable, Equatable {
         let next = overflow ? (delta > 0 ? window.bounds.upperBound : window.bounds.lowerBound) : window.clamp(sum)
         guard next != value else { return false }
         value = next
+        position = next * detentsPerStep
         hasMoved = true
-        if !crownRange.contains(next) {
+        if !window.range(around: anchor).contains(next) {
             anchor = next
         }
         return true
     }
 
-    /// Centres the Crown window on ``value``, so the next turn has room both ways. Call
-    /// only while the Crown is idle: it changes ``crownRange`` but never ``value``.
+    /// Centres the Crown window on ``value`` and drops any part of a step turned so far,
+    /// so the next turn has room both ways. Call only while the Crown is idle: it changes
+    /// ``crownRange`` and ``position`` but never ``value``.
     public mutating func recentre() {
         anchor = value
+        position = value * detentsPerStep
     }
 
     /// Records that ``value`` has been written to the store.
     public mutating func markSaved() {
         savedValue = value
+    }
+
+    /// `dividend / divisor` rounded towards negative infinity (`divisor` > 0).
+    private static func floorDivide(_ dividend: Int, by divisor: Int) -> Int {
+        dividend >= 0 ? dividend / divisor : -((-dividend + divisor - 1) / divisor)
+    }
+}
+
+/// The speed of the Digital Crown's rotation, independent of any UI framework. The Watch
+/// maps it one to one onto SwiftUI's `DigitalCrownRotationalSensitivity`.
+public enum CrownRate: Int, Sendable, Comparable {
+    case low
+    case medium
+    case high
+
+    public static func < (lhs: CrownRate, rhs: CrownRate) -> Bool {
+        lhs.rawValue < rhs.rawValue
+    }
+}
+
+/// How the Crown edits one tile: the system rotation rate plus how many detents make one
+/// value step.
+///
+/// The system offers only three rates, and the device-tested Normal weight setting already
+/// uses the lowest, so Slow weight turns two detents into one step instead. Because the
+/// Crown window keeps the same number of detents (see ``CrownEdit``), that halves how far a
+/// turn moves the weight, while every step stays an exact multiple of the scale's step, so
+/// kilogram round trips are unaffected. With more than one detent per step the system's
+/// per-detent haptic would tick twice per step, so the app plays one click per applied
+/// step instead (``usesSystemHaptics``).
+///
+/// | Setting | Weight                  | Reps                    |
+/// |---------|-------------------------|-------------------------|
+/// | Slow    | low, 2 detents per step | low                     |
+/// | Normal  | low (device-tested)     | medium (device-tested)  |
+/// | Fast    | medium                  | high                    |
+public struct CrownProfile: Sendable, Equatable {
+    /// The system rotation rate.
+    public let rate: CrownRate
+    /// Crown detents per value step.
+    public let detentsPerStep: Int
+
+    /// Creates a profile. `detentsPerStep` below 1 is treated as 1.
+    public init(rate: CrownRate, detentsPerStep: Int = 1) {
+        self.rate = rate
+        self.detentsPerStep = max(1, detentsPerStep)
+    }
+
+    /// Whether the system plays the haptic for each detent. When `false`, the app plays one
+    /// haptic per value step it applies.
+    public var usesSystemHaptics: Bool { detentsPerStep == 1 }
+
+    /// The profile for the weight tile.
+    public static func weight(_ sensitivity: CrownSensitivity) -> CrownProfile {
+        switch sensitivity {
+        case .slow: CrownProfile(rate: .low, detentsPerStep: 2)
+        case .normal: CrownProfile(rate: .low)
+        case .fast: CrownProfile(rate: .medium)
+        }
+    }
+
+    /// The profile for the reps tile.
+    public static func reps(_ sensitivity: CrownSensitivity) -> CrownProfile {
+        switch sensitivity {
+        case .slow: CrownProfile(rate: .low)
+        case .normal: CrownProfile(rate: .medium)
+        case .fast: CrownProfile(rate: .high)
+        }
+    }
+
+    /// Moving between exercises with no tile selected; not user-adjustable.
+    public static let exerciseNavigation = CrownProfile(rate: .low)
+
+    /// Whether a full turn moves the value fewer steps than with `other`: a lower rate at
+    /// no fewer detents per step, or the same rate with more detents per step.
+    public func isSlower(than other: CrownProfile) -> Bool {
+        if rate == other.rate { return detentsPerStep > other.detentsPerStep }
+        return rate < other.rate && detentsPerStep >= other.detentsPerStep
     }
 }
 

@@ -7,11 +7,14 @@ import WholesetKit
 
 /// Screens the DEBUG demo harness can open straight into, for screenshots.
 ///
-/// Launch with `-WholesetDemo <screen>`, optionally `-WholesetDemoUnit lb`. The app then
-/// uses an in-memory store with the starter routines, canned workout data and a fake
-/// HealthKit manager. Nothing of this is compiled into Release builds.
+/// Launch with `-WholesetDemo <screen>`, optionally `-WholesetDemoUnit lb` (as if pounds
+/// had been chosen on iPhone and synced). The app then uses an in-memory store with the
+/// library and starter routines, canned workout data and a fake HealthKit manager.
+/// Nothing of this is compiled into Release builds.
 enum DemoScreen: String, CaseIterable {
     case home
+    /// Home on a first launch while the Watch waits for iCloud before adding starter routines.
+    case homeSyncing = "home-syncing"
     case countdown
     case exercise
     case exerciseSelected = "exercise-selected"
@@ -48,13 +51,19 @@ enum DemoHarness {
     }
 
     /// Builds an in-memory store and a controller showing `screen`.
-    static func makeLaunch(for screen: DemoScreen) -> (container: ModelContainer?, controller: WorkoutController?) {
-        guard let container = try? WholesetStore.makeContainer(inMemory: true) else { return (nil, nil) }
+    static func makeLaunch(for screen: DemoScreen) -> (container: ModelContainer?, controller: WorkoutController?, store: StoreCoordinator?) {
+        guard let container = try? WholesetStore.makeContainer(inMemory: true) else { return (nil, nil, nil) }
         let context = container.mainContext
+        // An in-memory store cannot sync, so the coordinator seeds the starters at once;
+        // the syncing demo pretends CloudKit is on and no import has finished.
+        let sync = screen == .homeSyncing
+            ? SyncMonitor(mode: .cloudKit) { .available }
+            : SyncMonitor(mode: .inMemory)
+        let store = StoreCoordinator(container: container, sync: sync, policy: .automatic, patience: .seconds(3_600))
+        store.start()
         let unit = requestedUnit()
         if let settings = try? AppSettings.current(in: context) {
-            settings.unit = unit
-            settings.updatedAt = .now
+            SettingsEditing.setUnit(unit, on: settings)
             try? context.save()
         }
 
@@ -69,12 +78,13 @@ enum DemoHarness {
             alerts: RestAlertScheduler(isEnabled: false),
             stateStore: ActiveWorkoutStateStore(defaults: defaults)
         )
+        AppDelegate.connect(store, to: controller)
         do {
             try configure(controller, health: health, for: screen, unit: unit, context: context)
         } catch {
             assertionFailure("Demo setup failed: \(error)")
         }
-        return (container, controller)
+        return (container, controller, store)
     }
 
     private static func configure(
@@ -85,7 +95,7 @@ enum DemoHarness {
         context: ModelContext
     ) throws {
         switch screen {
-        case .home:
+        case .home, .homeSyncing:
             return
         case .countdown:
             controller.installDemoPhase(.countdown(CountdownInfo(routineName: "Push", endsAt: .now.addingTimeInterval(2), isFrozen: true)))
@@ -160,7 +170,7 @@ enum DemoHarness {
             try log(bar, 9)
             health.recoveryStatus = .failed
             phase = .restored
-        case .home, .countdown, .summary, .exercise:
+        case .home, .homeSyncing, .countdown, .summary, .exercise:
             break
         }
         try context.save()

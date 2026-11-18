@@ -74,6 +74,8 @@ private struct ExerciseWatchSettings: View {
     let settings: AppSettings?
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(AppNavigation.self) private var navigation
+    @State private var customStep: CustomStepRequest?
 
     var body: some View {
         let unit = settings?.unit ?? .kg
@@ -85,23 +87,28 @@ private struct ExerciseWatchSettings: View {
             }
             if exercise.equipment != .bodyweight {
                 Picker("Progression Step", selection: stepSelection(unit: unit)) {
-                    Text(defaultStepLabel(unit: unit)).tag(Double?.none)
+                    Text(defaultStepLabel(unit: unit)).tag(StepChoice.followDefault)
                     ForEach(ProgressionStepChoices.options(for: unit, including: exercise.progressionStepKg), id: \.self) { kilograms in
                         StepOptionLabel(kilograms: kilograms, unit: unit, isDefault: false)
-                            .tag(Double?.some(kilograms))
+                            .tag(StepChoice.step(kilograms))
+                    }
+                    Section {
+                        Text("Custom…")
+                            .accessibilityLabel("Custom step")
+                            .tag(StepChoice.custom)
                     }
                 }
             }
-            Picker("Default Rest", selection: write(\.defaultRestSeconds) { ExerciseEditing.setDefaultRest($0, on: $1) }) {
-                Text(String(localized: "Default (\(Formatting.rest(settings?.defaultRestSeconds ?? RestTimer.fallbackSeconds)))"))
-                    .tag(Int?.none)
-                ForEach(RoutineRules.restChoices, id: \.self) { seconds in
-                    Text(Formatting.rest(seconds))
-                        .accessibilityLabel(Formatting.spokenRest(seconds))
-                        .tag(Int?.some(seconds))
-                }
-            }
-            .pickerStyle(.navigationLink)
+            RestPicker(
+                String(localized: "Default Rest"),
+                seconds: write(\.defaultRestSeconds) { ExerciseEditing.setDefaultRest($0, on: $1) },
+                default: RestPicker.DefaultOption(
+                    summary: String(localized: "Default (\(Formatting.rest(appDefaultRest)))"),
+                    explanation: String(localized: "The default rest in Settings, now \(Formatting.rest(appDefaultRest))."),
+                    seconds: appDefaultRest
+                ),
+                isExpanded: revealsRest
+            )
         } header: {
             Text("Watch")
         } footer: {
@@ -111,22 +118,55 @@ private struct ExerciseWatchSettings: View {
                 Text("The progression step is what the ↑ suggestion on Apple Watch adds. Default rest applies when the routine doesn't set one.")
             }
         }
+        .sheet(item: $customStep) { request in
+            CustomStepSheet(subject: exercise.name, unit: unit, kilograms: request.kilograms) { kilograms in
+                ExerciseEditing.setProgressionStep(kilograms: kilograms, on: exercise)
+                modelContext.saveLogged()
+            }
+        }
+    }
+
+    /// The rest from Settings that "Default" stands for.
+    private var appDefaultRest: Int {
+        settings?.defaultRestSeconds ?? RestTimer.fallbackSeconds
+    }
+
+    /// Whether the DEBUG demo harness shows the rest picker open.
+    private var revealsRest: Bool {
+        #if DEBUG
+        navigation.demoReveal == .restPicker
+        #else
+        false
+        #endif
     }
 
     /// "Default (2.5 kg)": the step from Settings for this equipment.
     private func defaultStepLabel(unit: WeightUnit) -> String {
-        let step = settings.map { ProgressionSettings($0) }?.defaultStep(for: exercise.equipment)
-            ?? ProgressionStep.builtInDefault(for: exercise.equipment, unit: unit)
-        guard let step else { return String(localized: "Default") }
+        guard let step = defaultStep(unit: unit) else { return String(localized: "Default") }
         return String(localized: "Default (\(StepFormat.string(kilograms: step, unit: unit)))")
     }
 
-    private func stepSelection(unit: WeightUnit) -> Binding<Double?> {
+    /// The step from Settings for this equipment, in kilograms.
+    private func defaultStep(unit: WeightUnit) -> Double? {
+        settings.map { ProgressionSettings($0) }?.defaultStep(for: exercise.equipment)
+            ?? ProgressionStep.builtInDefault(for: exercise.equipment, unit: unit)
+    }
+
+    /// Writes through `ExerciseEditing` and saves; "Custom…" opens the sheet to type a step.
+    private func stepSelection(unit: WeightUnit) -> Binding<StepChoice> {
         Binding(
-            get: { exercise.progressionStepKg.map { ProgressionStepChoices.tag(for: $0, unit: unit) } },
-            set: { kilograms in
-                ExerciseEditing.setProgressionStep(kilograms: kilograms, on: exercise)
-                modelContext.saveLogged()
+            get: { exercise.progressionStepKg.map { .step(ProgressionStepChoices.tag(for: $0, unit: unit)) } ?? .followDefault },
+            set: { choice in
+                switch choice {
+                case .followDefault:
+                    ExerciseEditing.setProgressionStep(kilograms: nil, on: exercise)
+                    modelContext.saveLogged()
+                case .step(let kilograms):
+                    ExerciseEditing.setProgressionStep(kilograms: kilograms, on: exercise)
+                    modelContext.saveLogged()
+                case .custom:
+                    customStep = CustomStepRequest(equipment: nil, kilograms: exercise.progressionStepKg ?? defaultStep(unit: unit))
+                }
             }
         )
     }

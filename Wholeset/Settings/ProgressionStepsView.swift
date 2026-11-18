@@ -10,6 +10,8 @@ struct ProgressionStepsView: View {
     @Bindable var settings: AppSettings
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(AppNavigation.self) private var navigation
+    @State private var customStep: CustomStepRequest?
 
     /// The equipment types with a weight step, in display order.
     static let equipment: [Equipment] = [.barbell, .dumbbell, .machine, .cable, .other]
@@ -21,18 +23,39 @@ struct ProgressionStepsView: View {
                     Picker(equipment.label, selection: selection(for: equipment)) {
                         ForEach(options(for: equipment), id: \.self) { kilograms in
                             StepOptionLabel(kilograms: kilograms, unit: settings.unit, isDefault: isBuiltIn(kilograms, for: equipment))
-                                .tag(kilograms)
+                                .tag(StepChoice.step(kilograms))
+                        }
+                        Section {
+                            Text("Custom…")
+                                .accessibilityLabel("Custom step")
+                                .tag(StepChoice.custom)
                         }
                     }
                 }
                 LabeledContent(Equipment.bodyweight.label, value: String(localized: "+1 rep"))
                     .accessibilityHint("Not adjustable.")
             } footer: {
-                Text("When every working set last time reached the top of its rep range, the ↑ suggestion on Apple Watch adds this much and goes back to the bottom of the range. Bodyweight exercises suggest one more rep instead. An exercise can set its own step in its details.")
+                Text("When every working set last time reached the top of its rep range, the ↑ suggestion on Apple Watch adds this much and goes back to the bottom of the range. Choose Custom to type any other step. Bodyweight exercises suggest one more rep instead. An exercise can set its own step in its details.")
             }
         }
         .navigationTitle("Progression Steps")
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(item: $customStep) { request in
+            if let equipment = request.equipment {
+                CustomStepSheet(subject: equipment.label, unit: settings.unit, kilograms: request.kilograms) { kilograms in
+                    SettingsEditing.setProgressionStep(kilograms: kilograms, for: equipment, on: settings, now: .now)
+                    modelContext.saveLogged()
+                }
+            }
+        }
+        #if DEBUG
+        .onAppear {
+            if case .customStep(let equipment) = navigation.demoReveal {
+                navigation.demoReveal = nil
+                customStep = CustomStepRequest(equipment: equipment, kilograms: current(for: equipment))
+            }
+        }
+        #endif
     }
 
     private var progression: ProgressionSettings { ProgressionSettings(settings) }
@@ -50,12 +73,21 @@ struct ProgressionStepsView: View {
     }
 
     /// Writes through `SettingsEditing` and saves; choosing the default clears the override.
-    private func selection(for equipment: Equipment) -> Binding<Double> {
+    /// "Custom…" opens the sheet to type a step instead.
+    private func selection(for equipment: Equipment) -> Binding<StepChoice> {
         Binding(
-            get: { ProgressionStepChoices.tag(for: current(for: equipment), unit: settings.unit) },
-            set: { kilograms in
-                SettingsEditing.setProgressionStep(kilograms: kilograms, for: equipment, on: settings, now: .now)
-                modelContext.saveLogged()
+            get: { .step(ProgressionStepChoices.tag(for: current(for: equipment), unit: settings.unit)) },
+            set: { choice in
+                switch choice {
+                case .step(let kilograms):
+                    SettingsEditing.setProgressionStep(kilograms: kilograms, for: equipment, on: settings, now: .now)
+                    modelContext.saveLogged()
+                case .followDefault:
+                    SettingsEditing.setProgressionStep(kilograms: nil, for: equipment, on: settings, now: .now)
+                    modelContext.saveLogged()
+                case .custom:
+                    customStep = CustomStepRequest(equipment: equipment, kilograms: current(for: equipment))
+                }
             }
         )
     }

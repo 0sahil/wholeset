@@ -102,6 +102,10 @@ final class AppNavigation {
     var exercisePath: [UUID] = []
     /// Screens pushed on the Settings tab.
     var settingsPath: [SettingsDestination] = []
+    #if DEBUG
+    /// A control the DEBUG demo harness shows open on the screen it opens.
+    var demoReveal: DemoReveal?
+    #endif
 
     init(tab: AppTab = .plan, planSheet: PlanSheet? = nil, exercisePath: [UUID] = [], settingsPath: [SettingsDestination] = []) {
         self.tab = tab

@@ -59,14 +59,7 @@ private struct SettingsForm: View {
                     .fixedSize()
                     .accessibilityLabel("Weight unit")
                 }
-                Picker("Default Rest", selection: binding(\.defaultRestSeconds, SettingsEditing.setDefaultRest)) {
-                    ForEach(RoutineRules.restChoices, id: \.self) { seconds in
-                        Text(Formatting.rest(seconds))
-                            .accessibilityLabel(Formatting.spokenRest(seconds))
-                            .tag(seconds)
-                    }
-                }
-                .pickerStyle(.navigationLink)
+                RestPicker(String(localized: "Default Rest"), seconds: binding(\.defaultRestSeconds, SettingsEditing.setDefaultRest))
                 NavigationLink(value: SettingsDestination.progressionSteps) {
                     LabeledContent("Progression Steps", value: String(localized: "By Equipment"))
                 }

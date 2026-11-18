@@ -145,6 +145,8 @@ struct RoutineItemEditor: View {
 
     @State private var showsAlternativePicker = false
     @Environment(\.dismiss) private var dismiss
+    /// Oldest first, like Settings: the row that survives a sync merge.
+    @Query(sort: \AppSettings.createdAt) private var settingsRows: [AppSettings]
 
     var body: some View {
         if let item = model.draft.item(id: itemID) {
@@ -173,15 +175,11 @@ struct RoutineItemEditor: View {
                 Text("Aim for \(item.repLow == item.repHigh ? "\(item.repLow)" : "\(item.repLow) to \(item.repHigh)") reps in each set.")
             }
             Section {
-                Picker("Rest", selection: binding(\.restSeconds, set: { model.draft.setRest($0, forItem: itemID) })) {
-                    Text("Exercise default").tag(Int?.none)
-                    ForEach(RoutineRules.restChoices, id: \.self) { seconds in
-                        Text(Formatting.rest(seconds))
-                            .accessibilityLabel(Formatting.spokenRest(seconds))
-                            .tag(Int?.some(seconds))
-                    }
-                }
-                .pickerStyle(.navigationLink)
+                RestPicker(
+                    String(localized: "Rest"),
+                    seconds: binding(\.restSeconds, set: { model.draft.setRest($0, forItem: itemID) }),
+                    default: exerciseDefaultRest(for: item.exerciseID)
+                )
             } footer: {
                 Text("The rest timer on Apple Watch starts after each logged set.")
             }
@@ -228,6 +226,21 @@ struct RoutineItemEditor: View {
             .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
             .map(\.id)
         return model.draft.alternatives(of: exerciseID, current: current)
+    }
+
+    /// What "use the default" means for this item: the exercise's own default rest, else the
+    /// one in Settings.
+    private func exerciseDefaultRest(for exerciseID: UUID) -> RestPicker.DefaultOption {
+        let own = exercises.first { $0.id == exerciseID }?.defaultRestSeconds
+        let seconds = own ?? settingsRows.first?.defaultRestSeconds ?? RestTimer.fallbackSeconds
+        let rest = Formatting.rest(seconds)
+        return RestPicker.DefaultOption(
+            summary: String(localized: "Exercise default (\(rest))"),
+            explanation: own == nil
+                ? String(localized: "The default rest in Settings, now \(rest).")
+                : String(localized: "This exercise's default rest, now \(rest)."),
+            seconds: seconds
+        )
     }
 
     private func name(of id: UUID) -> String {

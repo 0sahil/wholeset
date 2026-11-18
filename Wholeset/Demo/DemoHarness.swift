@@ -25,6 +25,18 @@ enum DemoState: String, CaseIterable {
     case progressionSteps = "progression-steps"
     /// An exercise's details with its Watch settings changed from the defaults.
     case exerciseSettings = "exercise-settings"
+    /// An exercise's details with the Default Rest wheels open on an exercise's own rest.
+    case restPicker = "rest-picker"
+    /// Settings → Progression Steps with a step no preset fits, and the sheet to type one.
+    case customStep = "custom-step"
+}
+
+/// A control the demo harness shows open, beyond what navigation alone can reach.
+enum DemoReveal: Equatable {
+    /// The exercise detail's Default Rest wheels.
+    case restPicker
+    /// The custom step sheet for this equipment's default step.
+    case customStep(Equipment)
 }
 
 enum DemoHarness {
@@ -100,6 +112,21 @@ enum DemoHarness {
             if let id = ids.bench, let bench = try? context.fetch(FetchDescriptor<Exercise>(predicate: #Predicate { $0.id == id })).first {
                 ExerciseEditing.setProgressionStep(kilograms: unit.kilograms(fromValue: unit == .kg ? 1.25 : 2.5), on: bench)
                 ExerciseEditing.setDefaultRest(150, on: bench)
+            }
+        case .restPicker:
+            navigation.tab = .exercises
+            navigation.exercisePath = ids.bench.map { [$0] } ?? []
+            navigation.demoReveal = .restPicker
+            if let id = ids.bench, let bench = try? context.fetch(FetchDescriptor<Exercise>(predicate: #Predicate { $0.id == id })).first {
+                ExerciseEditing.setDefaultRest(105, on: bench)
+            }
+        case .customStep:
+            navigation.tab = .settings
+            navigation.settingsPath = [.progressionSteps]
+            navigation.demoReveal = .customStep(.dumbbell)
+            if let settings = try? AppSettings.current(in: context) {
+                // Neither 3.75 kg nor 7.5 lb is a preset, so the picker lists it on its own.
+                SettingsEditing.setProgressionStep(kilograms: unit.kilograms(fromValue: unit == .kg ? 3.75 : 7.5), for: .dumbbell, on: settings)
             }
         }
         context.saveLogged()

@@ -90,6 +90,16 @@ enum Formatting {
         Duration.seconds(seconds).formatted(.units(allowed: [.minutes, .seconds], width: .wide))
     }
 
+    /// "2 minutes", for VoiceOver on the rest picker's minutes wheel.
+    static func spokenMinutes(_ minutes: Int) -> String {
+        Duration.seconds(minutes * 60).formatted(.units(allowed: [.minutes], width: .wide, zeroValueUnits: .show(length: 1)))
+    }
+
+    /// "30 seconds", for VoiceOver on the rest picker's seconds wheel.
+    static func spokenSeconds(_ seconds: Int) -> String {
+        Duration.seconds(seconds).formatted(.units(allowed: [.seconds], width: .wide, zeroValueUnits: .show(length: 1)))
+    }
+
     /// A routine item's rest: its own value, or the exercise default.
     static func rest(_ seconds: Int?) -> String {
         seconds.map(rest) ?? String(localized: "Exercise default")

@@ -1,0 +1,31 @@
+// iOS app target. Inherits project settings from Base.xcconfig.
+
+SDKROOT = iphoneos
+SUPPORTED_PLATFORMS = iphoneos iphonesimulator
+SUPPORTS_MACCATALYST = NO
+SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO
+SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO
+TARGETED_DEVICE_FAMILY = 1
+IPHONEOS_DEPLOYMENT_TARGET = 26.0
+
+PRODUCT_NAME = $(TARGET_NAME)
+PRODUCT_BUNDLE_IDENTIFIER = app.wholeset
+CODE_SIGN_ENTITLEMENTS = Wholeset/Wholeset.entitlements
+LD_RUNPATH_SEARCH_PATHS = $(inherited) @executable_path/Frameworks
+ENABLE_PREVIEWS = YES
+
+ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon
+ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor
+
+// Info.plist: generated from the keys below, merged with Wholeset/Info.plist,
+// which holds the array-valued keys that have no INFOPLIST_KEY_ setting.
+GENERATE_INFOPLIST_FILE = YES
+INFOPLIST_FILE = Wholeset/Info.plist
+INFOPLIST_KEY_CFBundleDisplayName = Wholeset
+INFOPLIST_KEY_LSApplicationCategoryType = public.app-category.healthcare-fitness
+INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES
+INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES
+INFOPLIST_KEY_UILaunchScreen_Generation = YES
+INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
+INFOPLIST_KEY_NSHealthShareUsageDescription = Wholeset reads heart rate and active energy from your workouts to show them in your workout history.
+INFOPLIST_KEY_NSHealthUpdateUsageDescription = Wholeset saves your strength workouts to Apple Health, including heart rate and active energy, so they appear in Fitness and count toward your Activity rings.

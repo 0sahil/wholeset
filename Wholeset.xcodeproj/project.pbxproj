@@ -1,0 +1,362 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		5E0000000000000000000060 /* WholesetKit in Frameworks */ = {isa = PBXBuildFile; productRef = 5E0000000000000000000081 /* WholesetKit */; };
+		5E0000000000000000000061 /* WholesetKit in Frameworks */ = {isa = PBXBuildFile; productRef = 5E0000000000000000000082 /* WholesetKit */; };
+		5E0000000000000000000062 /* WholesetWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 5E0000000000000000000021 /* WholesetWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		5E0000000000000000000071 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 5E0000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 5E0000000000000000000031;
+			remoteInfo = WholesetWatch;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		5E0000000000000000000043 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				5E0000000000000000000062 /* WholesetWatch.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		5E0000000000000000000020 /* Wholeset.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Wholeset.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		5E0000000000000000000021 /* WholesetWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WholesetWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		5E0000000000000000000013 /* Exceptions for "Wholeset" folder in "Wholeset" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+				Wholeset.entitlements,
+			);
+			target = 5E0000000000000000000030 /* Wholeset */;
+		};
+		5E0000000000000000000014 /* Exceptions for "WholesetWatch" folder in "WholesetWatch" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+				WholesetWatch.entitlements,
+			);
+			target = 5E0000000000000000000031 /* WholesetWatch */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		5E0000000000000000000010 /* Wholeset */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				5E0000000000000000000013 /* Exceptions for "Wholeset" folder in "Wholeset" target */,
+			);
+			path = Wholeset;
+			sourceTree = "<group>";
+		};
+		5E0000000000000000000011 /* WholesetWatch */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				5E0000000000000000000014 /* Exceptions for "WholesetWatch" folder in "WholesetWatch" target */,
+			);
+			path = WholesetWatch;
+			sourceTree = "<group>";
+		};
+		5E0000000000000000000012 /* Config */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Config;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		5E0000000000000000000041 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5E0000000000000000000060 /* WholesetKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5E0000000000000000000051 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5E0000000000000000000061 /* WholesetKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		5E0000000000000000000002 = {
+			isa = PBXGroup;
+			children = (
+				5E0000000000000000000012 /* Config */,
+				5E0000000000000000000010 /* Wholeset */,
+				5E0000000000000000000011 /* WholesetWatch */,
+				5E0000000000000000000003 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		5E0000000000000000000003 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				5E0000000000000000000020 /* Wholeset.app */,
+				5E0000000000000000000021 /* WholesetWatch.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		5E0000000000000000000030 /* Wholeset */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5E00000000000000000000A0 /* Build configuration list for PBXNativeTarget "Wholeset" */;
+			buildPhases = (
+				5E0000000000000000000040 /* Sources */,
+				5E0000000000000000000041 /* Frameworks */,
+				5E0000000000000000000042 /* Resources */,
+				5E0000000000000000000043 /* Embed Watch Content */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				5E0000000000000000000070 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				5E0000000000000000000010 /* Wholeset */,
+			);
+			name = Wholeset;
+			packageProductDependencies = (
+				5E0000000000000000000081 /* WholesetKit */,
+			);
+			productName = Wholeset;
+			productReference = 5E0000000000000000000020 /* Wholeset.app */;
+			productType = "com.apple.product-type.application";
+		};
+		5E0000000000000000000031 /* WholesetWatch */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5E00000000000000000000B0 /* Build configuration list for PBXNativeTarget "WholesetWatch" */;
+			buildPhases = (
+				5E0000000000000000000050 /* Sources */,
+				5E0000000000000000000051 /* Frameworks */,
+				5E0000000000000000000052 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				5E0000000000000000000011 /* WholesetWatch */,
+			);
+			name = WholesetWatch;
+			packageProductDependencies = (
+				5E0000000000000000000082 /* WholesetKit */,
+			);
+			productName = WholesetWatch;
+			productReference = 5E0000000000000000000021 /* WholesetWatch.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		5E0000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2720;
+				LastUpgradeCheck = 2720;
+				TargetAttributes = {
+					5E0000000000000000000030 = {
+						CreatedOnToolsVersion = 27.2;
+					};
+					5E0000000000000000000031 = {
+						CreatedOnToolsVersion = 27.2;
+					};
+				};
+			};
+			buildConfigurationList = 5E0000000000000000000090 /* Build configuration list for PBXProject "Wholeset" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 5E0000000000000000000002;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				5E0000000000000000000080 /* XCLocalSwiftPackageReference "WholesetKit" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 5E0000000000000000000003 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				5E0000000000000000000030 /* Wholeset */,
+				5E0000000000000000000031 /* WholesetWatch */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		5E0000000000000000000042 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5E0000000000000000000052 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		5E0000000000000000000040 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5E0000000000000000000050 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		5E0000000000000000000070 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 5E0000000000000000000031 /* WholesetWatch */;
+			targetProxy = 5E0000000000000000000071 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		5E0000000000000000000091 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReferenceAnchor = 5E0000000000000000000012 /* Config */;
+			baseConfigurationReferenceRelativePath = Base.xcconfig;
+			buildSettings = {
+			};
+			name = Debug;
+		};
+		5E0000000000000000000092 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReferenceAnchor = 5E0000000000000000000012 /* Config */;
+			baseConfigurationReferenceRelativePath = Base.xcconfig;
+			buildSettings = {
+			};
+			name = Release;
+		};
+		5E00000000000000000000A1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReferenceAnchor = 5E0000000000000000000012 /* Config */;
+			baseConfigurationReferenceRelativePath = Wholeset.xcconfig;
+			buildSettings = {
+			};
+			name = Debug;
+		};
+		5E00000000000000000000A2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReferenceAnchor = 5E0000000000000000000012 /* Config */;
+			baseConfigurationReferenceRelativePath = Wholeset.xcconfig;
+			buildSettings = {
+			};
+			name = Release;
+		};
+		5E00000000000000000000B1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReferenceAnchor = 5E0000000000000000000012 /* Config */;
+			baseConfigurationReferenceRelativePath = WholesetWatch.xcconfig;
+			buildSettings = {
+			};
+			name = Debug;
+		};
+		5E00000000000000000000B2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReferenceAnchor = 5E0000000000000000000012 /* Config */;
+			baseConfigurationReferenceRelativePath = WholesetWatch.xcconfig;
+			buildSettings = {
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		5E0000000000000000000090 /* Build configuration list for PBXProject "Wholeset" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5E0000000000000000000091 /* Debug */,
+				5E0000000000000000000092 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		5E00000000000000000000A0 /* Build configuration list for PBXNativeTarget "Wholeset" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5E00000000000000000000A1 /* Debug */,
+				5E00000000000000000000A2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		5E00000000000000000000B0 /* Build configuration list for PBXNativeTarget "WholesetWatch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5E00000000000000000000B1 /* Debug */,
+				5E00000000000000000000B2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		5E0000000000000000000080 /* XCLocalSwiftPackageReference "WholesetKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = WholesetKit;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		5E0000000000000000000081 /* WholesetKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 5E0000000000000000000080 /* XCLocalSwiftPackageReference "WholesetKit" */;
+			productName = WholesetKit;
+		};
+		5E0000000000000000000082 /* WholesetKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 5E0000000000000000000080 /* XCLocalSwiftPackageReference "WholesetKit" */;
+			productName = WholesetKit;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 5E0000000000000000000001 /* Project object */;
+}

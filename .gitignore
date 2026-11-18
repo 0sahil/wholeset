@@ -5,6 +5,17 @@
 ## User settings
 xcuserdata/
 
+## Build output
+DerivedData/
+build/
+*.xcresult
+
+## Per-developer build settings (team ID); see Config/Local.xcconfig.example
+Config/Local.xcconfig
+
+## macOS
+.DS_Store
+
 ## Obj-C/Swift specific
 *.hmap
 
@@ -30,6 +41,7 @@ playground.xcworkspace
 # .swiftpm
 
 .build/
+.swiftpm/
 
 # CocoaPods
 #

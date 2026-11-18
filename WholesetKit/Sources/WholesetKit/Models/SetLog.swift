@@ -3,7 +3,7 @@
 import Foundation
 import SwiftData
 
-extension SchemaV2 {
+extension SchemaV3 {
     /// One set of an exercise: planned until ``completedAt`` is set.
     @Model
     public final class SetLog {

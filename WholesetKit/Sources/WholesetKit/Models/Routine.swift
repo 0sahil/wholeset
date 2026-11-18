@@ -3,7 +3,7 @@
 import Foundation
 import SwiftData
 
-extension SchemaV2 {
+extension SchemaV3 {
     /// A reusable workout template: an ordered list of exercises with targets.
     ///
     /// Code that edits a routine or one of its items sets the routine's `updatedAt`:

@@ -5,17 +5,19 @@ import SwiftUI
 import UIKit
 import WholesetKit
 
-/// The Settings tab: units, default rest, the Watch's Crown speed, and the status of
-/// Apple Health and iCloud sync.
+/// The Settings tab: units, default rest, progression steps, the Watch's Crown speed, and
+/// the status of Apple Health and iCloud sync.
 struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(AppModel.self) private var model
+    @Environment(AppNavigation.self) private var navigation
     /// Oldest first: the row that survives when sync duplicates are merged, so this screen
     /// never holds a row that a merge deletes.
     @Query(sort: \AppSettings.createdAt) private var rows: [AppSettings]
 
     var body: some View {
-        NavigationStack {
+        @Bindable var navigation = navigation
+        NavigationStack(path: $navigation.settingsPath) {
             Group {
                 if let settings = rows.first {
                     SettingsForm(settings: settings, health: model.health, sync: model.store.sync)
@@ -25,6 +27,14 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("Settings")
+            .navigationDestination(for: SettingsDestination.self) { destination in
+                switch destination {
+                case .progressionSteps:
+                    if let settings = rows.first {
+                        ProgressionStepsView(settings: settings)
+                    }
+                }
+            }
         }
     }
 }
@@ -57,6 +67,9 @@ private struct SettingsForm: View {
                     }
                 }
                 .pickerStyle(.navigationLink)
+                NavigationLink(value: SettingsDestination.progressionSteps) {
+                    LabeledContent("Progression Steps", value: String(localized: "By Equipment"))
+                }
             } footer: {
                 Text("Weights are always stored in kilograms; the unit only changes how they're shown and entered. Default rest applies when neither the routine nor the exercise sets one.")
             }

@@ -9,7 +9,7 @@ import Testing
 /// SwiftData's `Schema` API exposes them.
 @Suite("Schema follows CloudKit rules")
 struct SchemaConformanceTests {
-    static let versions: [any VersionedSchema.Type] = [SchemaV1.self, SchemaV2.self]
+    static let versions: [any VersionedSchema.Type] = [SchemaV1.self, SchemaV2.self, SchemaV3.self]
 
     private func schema(_ version: any VersionedSchema.Type) -> Schema {
         Schema(versionedSchema: version)
@@ -26,9 +26,12 @@ struct SchemaConformanceTests {
     @Test func versionsAndMigrationPlan() {
         #expect(SchemaV1.versionIdentifier == Schema.Version(1, 0, 0))
         #expect(SchemaV2.versionIdentifier == Schema.Version(2, 0, 0))
-        #expect(WholesetMigrationPlan.schemas.map { $0.versionIdentifier } == [Schema.Version(1, 0, 0), Schema.Version(2, 0, 0)])
-        #expect(WholesetMigrationPlan.stages.count == 1)
-        #expect(CurrentSchema.versionIdentifier == SchemaV2.versionIdentifier)
+        #expect(SchemaV3.versionIdentifier == Schema.Version(3, 0, 0))
+        #expect(WholesetMigrationPlan.schemas.map { $0.versionIdentifier } == [
+            Schema.Version(1, 0, 0), Schema.Version(2, 0, 0), Schema.Version(3, 0, 0),
+        ])
+        #expect(WholesetMigrationPlan.stages.count == 2)
+        #expect(CurrentSchema.versionIdentifier == SchemaV3.versionIdentifier)
         #expect(WholesetStore.schema.entities.count == 8)
     }
 
@@ -94,7 +97,7 @@ struct SchemaConformanceTests {
     /// Guards the checks above against passing vacuously: the introspection must
     /// report non-optional defaulted attributes and to-many relationships as such.
     @Test func introspectionReportsKnownShapes() throws {
-        let schema = schema(SchemaV2.self)
+        let schema = schema(SchemaV3.self)
         let exercise = try #require(schema.entities.first { $0.name == "Exercise" })
         let name = try #require(exercise.attributes.first { $0.name == "name" })
         #expect(!name.isOptional)
@@ -125,7 +128,7 @@ struct SchemaConformanceTests {
     }
 
     @Test func enumsAreStoredAsStrings() {
-        let schema = schema(SchemaV2.self)
+        let schema = schema(SchemaV3.self)
         let rawAttributes = [
             ("Exercise", "equipmentRaw"), ("Exercise", "primaryMuscleRaw"),
             ("Session", "sourceRaw"), ("AppSettings", "unitRaw"),
@@ -139,26 +142,52 @@ struct SchemaConformanceTests {
         }
     }
 
-    /// Version 2 only adds attributes, all optional or defaulted, so the lightweight stage
-    /// applies and the CloudKit schema stays additive.
-    @Test func versionTwoOnlyAddsOptionalOrDefaultedAttributes() throws {
-        let old = schema(SchemaV1.self)
-        let new = schema(SchemaV2.self)
-        var added: Set<String> = []
-        for entity in new.entities {
-            let previous = try #require(old.entities.first { $0.name == entity.name })
-            let previousAttributes = Set(previous.attributes.map(\.name))
-            #expect(Set(entity.relationships.map(\.name)) == Set(previous.relationships.map(\.name)), "\(entity.name) relationships changed")
-            #expect(previousAttributes.isSubset(of: Set(entity.attributes.map(\.name))), "\(entity.name) lost an attribute")
-            for attribute in entity.attributes where !previousAttributes.contains(attribute.name) {
-                added.insert("\(entity.name).\(attribute.name)")
-                #expect(attribute.isOptional || attribute.defaultValue != nil)
-            }
-        }
-        #expect(added == [
+    /// Attributes each version adds over the one before. Every step only adds attributes,
+    /// all optional or defaulted, so the lightweight stages apply and the CloudKit schema
+    /// stays additive.
+    static let additions: [(old: any VersionedSchema.Type, new: any VersionedSchema.Type, added: Set<String>)] = [
+        (SchemaV1.self, SchemaV2.self, [
             "Exercise.libraryKey", "Routine.seedKey",
             "AppSettings.weightCrownSensitivityRaw", "AppSettings.repsCrownSensitivityRaw",
             "AppSettings.starterRoutinesDecidedAt",
-        ])
+        ]),
+        (SchemaV2.self, SchemaV3.self, [
+            "AppSettings.progressionStepsRaw", "SessionExercise.isSkipped", "SessionExercise.routineItemID",
+        ]),
+    ]
+
+    @Test(arguments: additions.indices)
+    func eachVersionOnlyAddsOptionalOrDefaultedAttributes(_ index: Int) throws {
+        let step = Self.additions[index]
+        let old = schema(step.old)
+        let new = schema(step.new)
+        var added: Set<String> = []
+        for entity in new.entities {
+            let previous = try #require(old.entities.first { $0.name == entity.name })
+            let previousAttributes = Dictionary(uniqueKeysWithValues: previous.attributes.map { ($0.name, $0) })
+            #expect(Set(entity.relationships.map(\.name)) == Set(previous.relationships.map(\.name)), "\(entity.name) relationships changed")
+            #expect(Set(previousAttributes.keys).isSubset(of: Set(entity.attributes.map(\.name))), "\(entity.name) lost an attribute")
+            for attribute in entity.attributes {
+                if let before = previousAttributes[attribute.name] {
+                    #expect(
+                        String(describing: before.valueType) == String(describing: attribute.valueType),
+                        "\(entity.name).\(attribute.name) changed type"
+                    )
+                } else {
+                    added.insert("\(entity.name).\(attribute.name)")
+                    #expect(attribute.isOptional || attribute.defaultValue != nil)
+                }
+            }
+        }
+        #expect(added == step.added)
+    }
+
+    @Test func versionThreeDefaults() throws {
+        let schema = schema(SchemaV3.self)
+        let entry = try #require(schema.entities.first { $0.name == "SessionExercise" })
+        #expect(entry.attributes.first { $0.name == "isSkipped" }?.defaultValue as? Bool == false)
+        #expect(entry.attributes.first { $0.name == "routineItemID" }?.isOptional == true)
+        let settings = try #require(schema.entities.first { $0.name == "AppSettings" })
+        #expect(settings.attributes.first { $0.name == "progressionStepsRaw" }?.defaultValue as? String == "")
     }
 }

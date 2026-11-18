@@ -86,6 +86,12 @@ enum PlanSheet: Identifiable, Hashable {
     var id: Self { self }
 }
 
+/// Screens pushed on the Settings tab.
+enum SettingsDestination: Hashable {
+    /// The default progression step per equipment.
+    case progressionSteps
+}
+
 /// Where the app is: the selected tab and what each tab shows.
 @Observable
 final class AppNavigation {
@@ -94,10 +100,13 @@ final class AppNavigation {
     var planSheet: PlanSheet?
     /// Exercises pushed on the Exercises tab, by id.
     var exercisePath: [UUID] = []
+    /// Screens pushed on the Settings tab.
+    var settingsPath: [SettingsDestination] = []
 
-    init(tab: AppTab = .plan, planSheet: PlanSheet? = nil, exercisePath: [UUID] = []) {
+    init(tab: AppTab = .plan, planSheet: PlanSheet? = nil, exercisePath: [UUID] = [], settingsPath: [SettingsDestination] = []) {
         self.tab = tab
         self.planSheet = planSheet
         self.exercisePath = exercisePath
+        self.settingsPath = settingsPath
     }
 }

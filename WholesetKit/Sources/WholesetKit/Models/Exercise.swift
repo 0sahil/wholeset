@@ -3,7 +3,7 @@
 import Foundation
 import SwiftData
 
-extension SchemaV2 {
+extension SchemaV3 {
     /// A movement that can be logged: a built-in library entry or a custom exercise.
     @Model
     public final class Exercise {

@@ -71,6 +71,50 @@ func insertRoutine(
     return routine
 }
 
+/// One logged set for ``insertSession(startedAt:ended:entries:in:)``: (weight, reps, isWarmup).
+typealias LoggedSpec = (Double?, Int?, Bool)
+
+/// Inserts a session (finished unless `ended` is `false`) with one entry per spec, every set
+/// logged. Returns the session.
+@discardableResult
+func insertSession(
+    startedAt: Date,
+    ended: Bool = true,
+    name: String = "Past",
+    entries: [(Exercise, [LoggedSpec])],
+    in context: ModelContext
+) -> Session {
+    let session = Session(name: name, startedAt: startedAt)
+    if ended { session.endedAt = startedAt.addingTimeInterval(3_600) }
+    context.insert(session)
+    for (order, spec) in entries.enumerated() {
+        let entry = SessionExercise(order: order, repLow: 8, repHigh: 12)
+        context.insert(entry)
+        entry.session = session
+        entry.exercise = spec.0
+        for (index, set) in spec.1.enumerated() {
+            let log = SetLog(order: index, weightKg: set.0, reps: set.1, isWarmup: set.2)
+            log.completedAt = startedAt.addingTimeInterval(Double(60 * (order * 10 + index + 1)))
+            context.insert(log)
+            log.entry = entry
+        }
+    }
+    return session
+}
+
+/// The exercise named `name` in `context`.
+func exercise(named name: String, in context: ModelContext) throws -> Exercise {
+    let all = try context.fetch(FetchDescriptor<Exercise>())
+    guard let match = all.first(where: { $0.name == name }) else {
+        throw TestSupportError.missing(name)
+    }
+    return match
+}
+
+enum TestSupportError: Error {
+    case missing(String)
+}
+
 extension ModelContext {
     /// Inserts several models of possibly different types.
     func insertAll(_ models: any PersistentModel...) {

@@ -35,7 +35,10 @@ struct HomeView: View {
                 }
                 .disabled(routines.isEmpty)
 
-                EmptyWorkoutRow()
+                Button("Empty workout") {
+                    controller.startEmpty()
+                }
+                .accessibilityHint("Starts a workout without a routine; add exercises as you go.")
             }
             .navigationTitle {
                 Text("Wholeset")
@@ -113,22 +116,6 @@ private struct TodayCard: View {
         let symbols = Calendar.current.weekdaySymbols
         let day = symbols.indices.contains(next.weekday - 1) ? symbols[next.weekday - 1] : ""
         return String(localized: "Next: \(next.routine.name), \(day)")
-    }
-}
-
-/// "Empty workout", shown but unavailable until exercises can be added mid-workout.
-private struct EmptyWorkoutRow: View {
-    var body: some View {
-        Button {} label: {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Empty workout")
-                Text("Coming later: needs adding exercises during a workout.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .disabled(true)
-        .accessibilityHint("Not available yet.")
     }
 }
 

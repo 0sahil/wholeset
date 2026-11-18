@@ -3,7 +3,7 @@
 import Foundation
 import SwiftData
 
-extension SchemaV2 {
+extension SchemaV3 {
     /// A workout: logged live on a device or imported from another app.
     @Model
     public final class Session {

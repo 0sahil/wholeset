@@ -50,6 +50,7 @@ extension AppSettings {
         defaultRestSeconds = other.defaultRestSeconds
         weightCrownSensitivityRaw = other.weightCrownSensitivityRaw
         repsCrownSensitivityRaw = other.repsCrownSensitivityRaw
+        progressionStepsRaw = other.progressionStepsRaw
         updatedAt = other.updatedAt
     }
 

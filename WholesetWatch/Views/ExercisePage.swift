@@ -19,10 +19,13 @@ struct ExercisePage: View {
     let toggle: (ValueTile) -> Void
     let adjust: (ValueTile, Int) -> Void
     let openMenu: () -> Void
+    let applyHint: () -> Void
     let log: () -> Void
 
     var body: some View {
         let stored = engine.values(for: set)
+        let lastLine = engine.lastLine(for: set)
+        let hint = engine.currentProgressionHint
         let scale = controller.scale
         let weightKg = weightEdit.map { scale.kilograms(forSteps: $0.value) } ?? stored.weightKg
         let reps = repsEdit?.value ?? stored.reps
@@ -69,18 +72,36 @@ struct ExercisePage: View {
                     adjust: { adjust(.reps, $0) }
                 )
             }
-            // The sets logged so far, only when every row fits above the buttons: Log never
-            // moves down for it (on a 40 mm watch it usually shows on the done page only).
+            // "last 60 × 10" and the ↑ chip, then the sets logged so far, only when every row
+            // fits above the buttons: Log never moves down for them (on a 40 mm watch the
+            // table usually shows on the done page only). If even the line does not fit at
+            // its normal size, it shrinks rather than pushing Log.
+            let line = { (isCompact: Bool) in
+                LastLineView(line: lastLine, hint: hint, scale: scale, isCompact: isCompact, apply: applyHint)
+            }
             if loggedRows.isEmpty {
-                Spacer(minLength: 2)
+                ViewThatFits(in: .vertical) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        line(false)
+                        Spacer(minLength: 2)
+                    }
+                    line(true)
+                        .frame(maxHeight: .infinity, alignment: .top)
+                }
             } else {
                 ViewThatFits(in: .vertical) {
-                    VStack(spacing: 0) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        line(false)
                         LoggedSetTable(rows: loggedRows, scale: scale)
                             .padding(.top, 2)
                         Spacer(minLength: 2)
                     }
-                    Spacer(minLength: 2)
+                    VStack(alignment: .leading, spacing: 0) {
+                        line(false)
+                        Spacer(minLength: 2)
+                    }
+                    line(true)
+                        .frame(maxHeight: .infinity, alignment: .top)
                 }
             }
             HStack(spacing: 6) {
@@ -90,6 +111,124 @@ struct ExercisePage: View {
                 }
                 .buttonStyle(AccentButtonStyle())
                 .accessibilityHint("Saves this set and starts the rest timer.")
+            }
+        }
+    }
+}
+
+/// "last 60 × 10" (or "first time") and, when the progression rule fires, the accent chip
+/// "↑ 62.5 × 8" on the same line. Tapping the chip applies it to the remaining sets.
+struct LastLineView: View {
+    let line: LastLine
+    let hint: ProgressionHint?
+    let scale: WeightScale
+    /// The smaller fallback used when the normal line does not fit.
+    let isCompact: Bool
+    let apply: () -> Void
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Text(lastText)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .accessibilityLabel(spokenLast)
+            Spacer(minLength: 2)
+            if let hint {
+                Button(action: apply) {
+                    Text("↑ \(WatchSetText.spaced(hint.values, scale: scale))")
+                        .fontWeight(.semibold)
+                        .monospacedDigit()
+                        .foregroundStyle(Theme.accent)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, isCompact ? 1 : 2)
+                        .background(Theme.accent.opacity(0.18), in: Capsule())
+                        // A taller touch area than the chip draws, without moving anything.
+                        .contentShape(Capsule().inset(by: -4))
+                }
+                .buttonStyle(.plain)
+                .layoutPriority(1)
+                .accessibilityLabel("Suggested: \(WatchSetText.spoken(hint.values, scale: scale))")
+                .accessibilityHint("Uses this weight and reps for the remaining sets.")
+            }
+        }
+        .font(isCompact ? .caption2 : .footnote)
+        .padding(.horizontal, 2)
+    }
+
+    private var lastText: String {
+        switch line {
+        case .firstTime: String(localized: "first time")
+        case .previous(let values): String(localized: "last \(WatchSetText.spaced(values, scale: scale))")
+        case .none: ""
+        }
+    }
+
+    private var spokenLast: String {
+        switch line {
+        case .firstTime: String(localized: "First time doing this exercise")
+        case .previous(let values): String(localized: "Last time: \(WatchSetText.spoken(values, scale: scale))")
+        case .none: ""
+        }
+    }
+}
+
+/// A skipped exercise: "Skipped", the sets it got before, and Resume.
+struct ExerciseSkippedPage: View {
+    let controller: WorkoutController
+    let engine: WorkoutEngine
+    let entry: SessionExercise
+    let openMenu: () -> Void
+
+    var body: some View {
+        let rows = LoggedSetRow.rows(for: entry.sortedSets)
+        VStack(alignment: .leading, spacing: 3) {
+            ScreenHeader(title: entry.exercise?.name ?? "")
+            SetLine(label: String(localized: "Skipped"), statuses: engine.statuses(of: entry))
+            if rows.isEmpty {
+                Spacer(minLength: 2)
+            } else {
+                ViewThatFits(in: .vertical) {
+                    VStack(spacing: 0) {
+                        LoggedSetTable(rows: rows, scale: controller.scale)
+                        Spacer(minLength: 2)
+                    }
+                    Spacer(minLength: 2)
+                }
+            }
+            HStack(spacing: 6) {
+                MoreButton(action: openMenu)
+                Button("Resume") {
+                    controller.setSkipped(false, for: entry)
+                }
+                .buttonStyle(AccentButtonStyle())
+                .accessibilityLabel("Resume \(entry.exercise?.name ?? "")")
+            }
+        }
+    }
+}
+
+/// A workout without exercises yet: "No exercises yet" and Add exercise.
+struct EmptyWorkoutPage: View {
+    let controller: WorkoutController
+    let openMenu: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            ScreenHeader(title: controller.engine?.session.name ?? "")
+            Text("No exercises yet")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .padding(.top, 4)
+            Spacer(minLength: 2)
+            HStack(spacing: 6) {
+                MoreButton(action: openMenu)
+                Button("Add exercise") {
+                    controller.openMenu(at: [.exercises(.add)])
+                }
+                .buttonStyle(AccentButtonStyle())
             }
         }
     }
@@ -378,6 +517,6 @@ struct MoreButton: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("More")
-        .accessibilityHint("Add or remove a set, mark a warm-up, see all exercises, or end the workout.")
+        .accessibilityHint("Swap, skip or add exercises, change sets, see all exercises, or end the workout.")
     }
 }

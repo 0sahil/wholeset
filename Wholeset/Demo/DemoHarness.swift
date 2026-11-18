@@ -21,6 +21,10 @@ enum DemoState: String, CaseIterable {
     case exercises
     case exerciseDetail = "exercise-detail"
     case settings
+    /// Settings → Progression Steps, with one step changed from its default.
+    case progressionSteps = "progression-steps"
+    /// An exercise's details with its Watch settings changed from the defaults.
+    case exerciseSettings = "exercise-settings"
 }
 
 enum DemoHarness {
@@ -84,7 +88,21 @@ enum DemoHarness {
             navigation.exercisePath = ids.bench.map { [$0] } ?? []
         case .settings:
             navigation.tab = .settings
+        case .progressionSteps:
+            navigation.tab = .settings
+            navigation.settingsPath = [.progressionSteps]
+            if let settings = try? AppSettings.current(in: context) {
+                SettingsEditing.setProgressionStep(kilograms: unit.kilograms(fromValue: unit == .kg ? 1 : 2.5), for: .dumbbell, on: settings)
+            }
+        case .exerciseSettings:
+            navigation.tab = .exercises
+            navigation.exercisePath = ids.bench.map { [$0] } ?? []
+            if let id = ids.bench, let bench = try? context.fetch(FetchDescriptor<Exercise>(predicate: #Predicate { $0.id == id })).first {
+                ExerciseEditing.setProgressionStep(kilograms: unit.kilograms(fromValue: unit == .kg ? 1.25 : 2.5), on: bench)
+                ExerciseEditing.setDefaultRest(150, on: bench)
+            }
         }
+        context.saveLogged()
         return AppModel(
             container: container,
             store: store,

@@ -3,9 +3,9 @@
 import Foundation
 import SwiftData
 
-extension SchemaV2 {
+extension SchemaV3 {
     /// App-wide preferences. There is meant to be exactly one row; use
-    /// ``SchemaV2/AppSettings/current(in:)`` rather than inserting directly.
+    /// ``SchemaV3/AppSettings/current(in:)`` rather than inserting directly.
     ///
     /// Code that changes a user-facing setting must also set `updatedAt` (the
     /// `SettingsEditing` functions do): duplicate rows created by sync are merged using
@@ -30,6 +30,9 @@ extension SchemaV2 {
         /// moment they were seeded, or when the first routine of the user's own appeared.
         /// `nil` while undecided. Rows merged by sync keep the earliest date.
         public var starterRoutinesDecidedAt: Date?
+        /// Raw storage for ``progressionSteps``: `equipment=kilograms` pairs separated by
+        /// `;`, for example `barbell=2.5;dumbbell=2`. Empty means every built-in default.
+        public var progressionStepsRaw: String = ""
 
         /// Creates a settings row, marked as never edited. Prefer ``current(in:)``.
         public init(unit: WeightUnit = .kg, defaultRestSeconds: Int = 90) {
@@ -57,5 +60,40 @@ extension AppSettings {
     public var repsCrownSensitivity: CrownSensitivity {
         get { CrownSensitivity(persisted: repsCrownSensitivityRaw) }
         set { repsCrownSensitivityRaw = newValue.rawValue }
+    }
+
+    /// The user's own progression step per equipment type, in kilograms. Equipment without
+    /// an entry uses the built-in default (see ``ProgressionStep``).
+    ///
+    /// Reading ignores malformed entries, unknown equipment, bodyweight and steps that are
+    /// not positive. Writing stores the valid entries in a fixed order.
+    public var progressionSteps: [Equipment: Double] {
+        get { ProgressionStepList.decode(progressionStepsRaw) }
+        set { progressionStepsRaw = ProgressionStepList.encode(newValue) }
+    }
+}
+
+/// Encodes per-equipment progression steps as `equipment=kilograms;…` text and back.
+enum ProgressionStepList {
+    static func decode(_ text: String) -> [Equipment: Double] {
+        var steps: [Equipment: Double] = [:]
+        for pair in text.split(separator: ";") {
+            let parts = pair.split(separator: "=", omittingEmptySubsequences: false)
+            guard parts.count == 2,
+                  let equipment = Equipment(rawValue: parts[0].trimmingCharacters(in: .whitespaces)),
+                  let value = Double(parts[1].trimmingCharacters(in: .whitespaces)),
+                  ProgressionStep.isValid(value, for: equipment) else { continue }
+            steps[equipment] = value
+        }
+        return steps
+    }
+
+    static func encode(_ steps: [Equipment: Double]) -> String {
+        Equipment.allCases.compactMap { equipment in
+            guard let value = steps[equipment], ProgressionStep.isValid(value, for: equipment) else { return nil }
+            // `description` is the shortest text that reads back as exactly this Double.
+            return "\(equipment.rawValue)=\(value.description)"
+        }
+        .joined(separator: ";")
     }
 }

@@ -21,6 +21,39 @@ enum WorkoutSheet: String, Identifiable {
     var id: String { rawValue }
 }
 
+/// What an exercise list in the menu is for.
+enum ExercisePickPurpose: Hashable {
+    /// Add the picked exercise at the end of the workout.
+    case add
+    /// Replace the current exercise with the picked one.
+    case swap
+}
+
+/// Screens pushed inside the ••• menu.
+enum MenuDestination: Hashable {
+    /// The current exercise's alternatives, then "Other…".
+    case swap
+    /// Recent exercises, then the library by muscle group.
+    case exercises(ExercisePickPurpose)
+    /// The library exercises of one muscle group.
+    case muscleGroup(MuscleGroup, ExercisePickPurpose)
+    /// Every exercise of the workout with its progress; `editing` starts in Edit mode.
+    case allExercises(editing: Bool)
+}
+
+/// What to offer once the summary is closed.
+struct RoutinePrompt: Equatable {
+    enum Kind: Equatable {
+        /// Update the session's routine with what changed.
+        case update(RoutineUpdateProposal)
+        /// Make a routine out of a workout that had none.
+        case saveAsRoutine(suggestedName: String)
+    }
+
+    let sessionID: UUID
+    let kind: Kind
+}
+
 /// The two editable values on the exercise page.
 enum ValueTile: Hashable {
     case weight
@@ -53,6 +86,8 @@ struct WorkoutSummaryInfo: Equatable {
     var maxHeartRate: Double?
     var activeKilocalories: Double?
     var health: HealthSaveStatus
+    /// Offered after the summary's Done, computed when the workout ended.
+    var followUp: RoutinePrompt?
 }
 
 /// How the Health side looks on the "Workout restored" screen.
@@ -77,6 +112,8 @@ final class WorkoutController {
         case active
         case restored
         case summary(WorkoutSummaryInfo)
+        /// "Update <routine>?" or "Save as routine?" after the summary.
+        case routinePrompt(RoutinePrompt)
     }
 
     private(set) var phase: Phase = .home
@@ -88,11 +125,15 @@ final class WorkoutController {
     private(set) var weightCrown: CrownProfile = .weight(.normal)
     /// How the Crown edits the reps tile (from the synced settings).
     private(set) var repsCrown: CrownProfile = .reps(.normal)
+    /// Unit and per-equipment steps for the progression chip (from the synced settings).
+    private(set) var progression = ProgressionSettings()
     private(set) var recoveryGraceExpired = false
     /// The visible workout page.
     var page: WorkoutPage = .exercise
     /// The sheet over the workout pages, if any.
     var sheet: WorkoutSheet?
+    /// The screens pushed inside the ••• menu.
+    var menuPath: [MenuDestination] = []
     /// A save failure to show the user.
     var errorMessage: String?
     /// A tile to select when the exercise page appears (DEBUG demos).
@@ -104,7 +145,7 @@ final class WorkoutController {
     @ObservationIgnored let context: ModelContext
     @ObservationIgnored private let stateStore: ActiveWorkoutStateStore
     @ObservationIgnored private let now: () -> Date
-    @ObservationIgnored private var pendingRoutine: Routine?
+    @ObservationIgnored private var pendingStart: PendingStart?
     @ObservationIgnored private var restTask: Task<Void, Never>?
     @ObservationIgnored private var isSceneActive = true
     @ObservationIgnored private var defaultRestSeconds = RestTimer.fallbackSeconds
@@ -144,8 +185,22 @@ final class WorkoutController {
     /// Whether a workout is starting, running or waiting to be restored.
     var isWorkoutRunning: Bool {
         switch phase {
-        case .home, .summary: engine != nil
+        case .home, .summary, .routinePrompt: engine != nil
         case .preparing, .countdown, .active, .restored: true
+        }
+    }
+
+    /// What a start waiting for permissions or the countdown will create.
+    private enum PendingStart {
+        case routine(Routine)
+        case empty
+
+        func isSame(as other: PendingStart?) -> Bool {
+            switch (self, other) {
+            case let (.routine(lhs), .routine(rhs)?): lhs === rhs
+            case (.empty, .empty?): true
+            default: false
+            }
         }
     }
 
@@ -177,6 +232,9 @@ final class WorkoutController {
             let reps = CrownProfile.reps(settings.repsCrownSensitivity)
             if repsCrown != reps { repsCrown = reps }
             defaultRestSeconds = settings.defaultRestSeconds
+            let progression = ProgressionSettings(settings)
+            if self.progression != progression { self.progression = progression }
+            if let engine, engine.progressionSettings != progression { engine.progressionSettings = progression }
         } catch {
             logger.error("Could not read settings: \(error, privacy: .public)")
         }
@@ -208,6 +266,7 @@ final class WorkoutController {
             resuming: session,
             in: context,
             defaultRestSeconds: defaultRestSeconds,
+            progressionSettings: progression,
             currentEntryID: stored?.currentEntryID,
             now: now
         )
@@ -240,7 +299,7 @@ final class WorkoutController {
     func healthRecoveryFinished() {
         guard health.recoveryStatus == .recovered, engine == nil else { return }
         switch phase {
-        case .home, .summary: break
+        case .home, .summary, .routinePrompt: break
         case .preparing, .countdown, .active, .restored: return
         }
         let ended = health.recoveredSessionID.flatMap(session(withID:)).flatMap { $0.endedAt == nil ? nil : $0 }
@@ -274,17 +333,25 @@ final class WorkoutController {
 
     /// Asks for permissions (first time only), prepares the Health session, then counts down.
     func start(_ routine: Routine) {
+        begin(.routine(routine), name: routine.name)
+    }
+
+    /// Starts a workout without a routine; exercises are added as it goes.
+    func startEmpty() {
+        begin(.empty, name: WorkoutEngine.emptyWorkoutName)
+    }
+
+    private func begin(_ start: PendingStart, name: String) {
         guard phase == .home, engine == nil else { return }
         loadSettings()
-        pendingRoutine = routine
-        let name = routine.name
+        pendingStart = start
         phase = .preparing(routineName: name)
         Task {
             await health.requestAuthorization()
             await alerts.requestAuthorization()
-            guard case .preparing = phase, pendingRoutine === routine else { return }
+            guard case .preparing = phase, start.isSame(as: pendingStart) else { return }
             await health.prepare()
-            guard case .preparing = phase, pendingRoutine === routine else {
+            guard case .preparing = phase, start.isSame(as: pendingStart) else {
                 await health.discard()
                 return
             }
@@ -296,7 +363,7 @@ final class WorkoutController {
     func cancelStart() {
         switch phase {
         case .preparing, .countdown:
-            pendingRoutine = nil
+            pendingStart = nil
             phase = .home
             Task {
                 await health.discard()
@@ -308,15 +375,27 @@ final class WorkoutController {
 
     /// Ends the countdown (on time or when tapped) and starts the workout.
     func countdownFinished() {
-        guard case .countdown(let info) = phase, !info.isFrozen, let routine = pendingRoutine else { return }
-        pendingRoutine = nil
+        guard case .countdown(let info) = phase, !info.isFrozen, let start = pendingStart else { return }
+        pendingStart = nil
         do {
-            let engine = try WorkoutEngine.start(
-                routine: routine,
-                in: context,
-                defaultRestSeconds: defaultRestSeconds,
-                now: now
-            )
+            let engine: WorkoutEngine
+            switch start {
+            case .routine(let routine):
+                engine = try WorkoutEngine.start(
+                    routine: routine,
+                    in: context,
+                    defaultRestSeconds: defaultRestSeconds,
+                    progressionSettings: progression,
+                    now: now
+                )
+            case .empty:
+                engine = try WorkoutEngine.startEmpty(
+                    in: context,
+                    defaultRestSeconds: defaultRestSeconds,
+                    progressionSettings: progression,
+                    now: now
+                )
+            }
             let session = engine.session
             self.engine = engine
             clock = WorkoutClock(startedAt: session.startedAt)
@@ -396,6 +475,82 @@ final class WorkoutController {
     /// Toggles the warm-up flag of the current set.
     func toggleWarmup() {
         perform { try $0.toggleWarmupOnCurrentSet() }
+    }
+
+    /// Applies the progression chip's weight and reps to the remaining working sets.
+    func applyProgressionHint() {
+        perform { try $0.applyProgressionHint() }
+    }
+
+    // MARK: - Changing the workout
+
+    /// Opens the ••• menu, optionally straight at `path`.
+    func openMenu(at path: [MenuDestination] = []) {
+        menuPath = path
+        sheet = .menu
+    }
+
+    /// Replaces the current exercise (logged sets stay with the old one) and closes the menu.
+    func swapCurrentExercise(to exercise: Exercise) {
+        perform { try $0.swapCurrentExercise(to: exercise) }
+        sheet = nil
+    }
+
+    /// Adds `exercise` at the end, shows it, and closes the menu.
+    func addExercise(_ exercise: Exercise) {
+        perform { try $0.addExercise(exercise) }
+        page = .exercise
+        sheet = nil
+    }
+
+    /// Skips or resumes `entry`. Skipping the exercise on screen also ends the rest.
+    func setSkipped(_ isSkipped: Bool, for entry: SessionExercise) {
+        guard let engine else { return }
+        let wasCurrent = entry === engine.currentEntry
+        perform { try $0.setSkipped(isSkipped, for: entry) }
+        if isSkipped, wasCurrent, rest != nil {
+            rest = nil
+            restChanged()
+        }
+    }
+
+    /// Moves the exercise at `index` one place up (`-1`) or down (`1`).
+    func moveEntry(at index: Int, by offset: Int) {
+        guard let engine, engine.entries.indices.contains(index),
+              engine.entries.indices.contains(index + offset) else { return }
+        // `onMove` offsets: moving down means inserting after the next element.
+        let destination = offset > 0 ? index + offset + 1 : index + offset
+        perform { try $0.moveEntries(fromOffsets: IndexSet(integer: index), toOffset: destination) }
+    }
+
+    /// Distinct exercises from the latest finished workouts, newest first.
+    func recentExercises() -> [Exercise] {
+        do {
+            return try RecentExercises.recent(limit: 20, in: context)
+        } catch {
+            logger.error("Could not read recent exercises: \(error, privacy: .public)")
+            return []
+        }
+    }
+
+    /// The active library exercises of `group`, by name.
+    func exercises(in group: MuscleGroup) -> [Exercise] {
+        ExerciseCatalog.filtered(allExercises(), by: ExerciseCatalog.Filter(group: group))
+    }
+
+    /// The muscle groups that have at least one active exercise.
+    func muscleGroups() -> [MuscleGroup] {
+        let groups = Set(allExercises().filter { !$0.isArchived }.map { MuscleGroup($0.primaryMuscle) })
+        return MuscleGroup.allCases.filter(groups.contains)
+    }
+
+    private func allExercises() -> [Exercise] {
+        do {
+            return try context.fetch(FetchDescriptor<Exercise>())
+        } catch {
+            logger.error("Could not read exercises: \(error, privacy: .public)")
+            return []
+        }
     }
 
     private func perform(_ action: (WorkoutEngine) throws -> Void) {
@@ -532,6 +687,8 @@ final class WorkoutController {
 
         let totals = engine.totals
         let session = engine.session
+        // Computed now: the engine is gone after End, and the session no longer changes.
+        let followUp = routinePrompt(for: session)
         let recording = [.preparing, .running, .paused].contains(health.state)
         phase = .summary(WorkoutSummaryInfo(
             sessionID: session.id,
@@ -542,7 +699,8 @@ final class WorkoutController {
             averageHeartRate: nil,
             maxHeartRate: nil,
             activeKilocalories: recording ? health.activeKilocalories : nil,
-            health: recording ? .saving : .notSaved
+            health: recording ? .saving : .notSaved,
+            followUp: followUp
         ))
 
         Task {
@@ -578,9 +736,48 @@ final class WorkoutController {
         }
     }
 
-    /// Leaves the summary for the home screen.
+    /// Leaves the summary: for the routine prompt if there is one, else for the home screen.
     func closeSummary() {
-        guard case .summary = phase else { return }
+        guard case .summary(let info) = phase else { return }
+        phase = info.followUp.map(Phase.routinePrompt) ?? .home
+    }
+
+    /// The prompt to show after the summary of `session`, if any.
+    private func routinePrompt(for session: Session) -> RoutinePrompt? {
+        if let proposal = RoutineUpdate.proposal(for: session) {
+            return RoutinePrompt(sessionID: session.id, kind: .update(proposal))
+        }
+        if RoutineUpdate.canSaveAsRoutine(session) {
+            let name = RoutineUpdate.suggestedRoutineName(for: session)
+            return RoutinePrompt(sessionID: session.id, kind: .saveAsRoutine(suggestedName: name))
+        }
+        return nil
+    }
+
+    /// Accepts the routine prompt: updates the routine, or saves the workout as a routine.
+    /// The session is fetched again by `id`; nothing happens if it is gone.
+    func acceptRoutinePrompt() {
+        guard case .routinePrompt(let prompt) = phase else { return }
+        if let session = session(withID: prompt.sessionID) {
+            do {
+                switch prompt.kind {
+                case .update:
+                    RoutineUpdate.apply(to: session, in: context, now: now())
+                case .saveAsRoutine(let name):
+                    try RoutineUpdate.saveAsRoutine(session, named: name, in: context, now: now())
+                }
+                try context.save()
+            } catch {
+                context.rollback()
+                report(error)
+            }
+        }
+        phase = .home
+    }
+
+    /// Declines the routine prompt; nothing changes.
+    func declineRoutinePrompt() {
+        guard case .routinePrompt = phase else { return }
         phase = .home
     }
 
@@ -593,6 +790,7 @@ final class WorkoutController {
         engine = nil
         clock = nil
         sheet = nil
+        menuPath = []
         page = .exercise
     }
 

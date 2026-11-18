@@ -51,4 +51,25 @@ public enum SettingsEditing {
         settings.repsCrownSensitivity = sensitivity
         settings.updatedAt = now
     }
+
+    /// Sets the user's default progression step for `equipment`.
+    ///
+    /// `nil`, an invalid value, or the built-in default for the current unit removes the
+    /// user's step, so the equipment follows the built-in default (which changes with the
+    /// unit). Bodyweight has no step and is ignored.
+    public static func setProgressionStep(kilograms: Double?, for equipment: Equipment, on settings: AppSettings, now: Date = .now) {
+        guard equipment != .bodyweight else { return }
+        var steps = settings.progressionSteps
+        let builtIn = ProgressionStep.builtInDefault(for: equipment, unit: settings.unit)
+        if let kilograms, ProgressionStep.isValid(kilograms, for: equipment),
+           !(builtIn.map { ProgressionStep.isSame($0, kilograms) } ?? false) {
+            steps[equipment] = kilograms
+        } else {
+            steps[equipment] = nil
+        }
+        let raw = ProgressionStepList.encode(steps)
+        guard raw != settings.progressionStepsRaw else { return }
+        settings.progressionStepsRaw = raw
+        settings.updatedAt = now
+    }
 }

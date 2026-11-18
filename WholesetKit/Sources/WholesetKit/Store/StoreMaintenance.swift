@@ -37,7 +37,7 @@ public struct MaintenanceReport: Sendable, Equatable {
 /// CloudKit has no unique constraints; uniqueness is restored here, in a way that every
 /// device computes the same result from the same rows:
 ///
-/// 1. **Settings**: a single `AppSettings` row (``SchemaV2/AppSettings/current(in:)``).
+/// 1. **Settings**: a single `AppSettings` row (``SchemaV3/AppSettings/current(in:)``).
 /// 2. **Library exercises**: rows sharing a `libraryKey` are merged into the oldest; routine
 ///    items, session entries and alternatives are re-pointed to it first, user-editable
 ///    values come from the most recently edited copy, aliases are combined.

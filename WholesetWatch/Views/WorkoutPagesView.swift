@@ -149,8 +149,9 @@ private struct ExerciseTab: View {
             } else if let engine = controller.engine, let entry = engine.currentEntry {
                 crownHost(engine: engine, entry: entry)
             } else {
-                Text("This workout has no exercises.")
-                    .foregroundStyle(.secondary)
+                EmptyWorkoutPage(controller: controller, openMenu: openMenu)
+                    .padding(.horizontal, 2)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
         }
         .focusScope(crownScope)
@@ -185,7 +186,10 @@ private struct ExerciseTab: View {
         let focus = crownFocusContext
         let pageCrown = pageCrown(engine: engine, focus: focus)
         Group {
-            if let set = engine.currentSet(of: entry) {
+            if entry.isSkipped {
+                ExerciseSkippedPage(controller: controller, engine: engine, entry: entry, openMenu: openMenu)
+                    .modifier(pageCrown)
+            } else if let set = engine.currentSet(of: entry) {
                 ExercisePage(
                     controller: controller,
                     engine: engine,
@@ -197,6 +201,11 @@ private struct ExerciseTab: View {
                     toggle: toggle,
                     adjust: editor.adjust,
                     openMenu: openMenu,
+                    applyHint: {
+                        // Save any Crown edit first, so the hint is applied over it.
+                        editor.release()
+                        controller.applyProgressionHint()
+                    },
                     log: {
                         // Save the edit first: the set is logged with what is on screen.
                         editor.release()
@@ -266,7 +275,7 @@ private struct ExerciseTab: View {
 
     private func openMenu() {
         editor.release()
-        controller.sheet = .menu
+        controller.openMenu()
     }
 
     private func applyInitialSelection() {

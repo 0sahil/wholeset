@@ -57,6 +57,12 @@ struct RootView: View {
             SummaryView(info: info, unit: controller.unit) {
                 controller.closeSummary()
             }
+        case .routinePrompt(let prompt):
+            RoutinePromptView(
+                prompt: prompt,
+                accept: controller.acceptRoutinePrompt,
+                decline: controller.declineRoutinePrompt
+            )
         }
     }
 }

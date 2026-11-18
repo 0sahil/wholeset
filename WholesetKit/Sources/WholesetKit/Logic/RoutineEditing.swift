@@ -214,6 +214,24 @@ public enum RoutineEditing {
         routine.updatedAt = now
     }
 
+    /// Puts `ordered` (items of `routine`) in that order: their `order` becomes 0, 1, 2, ….
+    /// Items of the routine missing from `ordered` keep their relative order after them.
+    public static func arrangeItems(_ ordered: [RoutineItem], in routine: Routine, now: Date = .now) {
+        var seen: Set<PersistentIdentifier> = []
+        let listed = ordered.filter { $0.routine === routine && seen.insert($0.persistentModelID).inserted }
+        let after = listed + routine.sortedItems.filter { !seen.contains($0.persistentModelID) }
+        guard after.enumerated().contains(where: { $0.element.order != $0.offset }) else { return }
+        assignOrder(after, now: now)
+        routine.updatedAt = now
+    }
+
+    /// Sets the exercise `item` performs.
+    public static func setExercise(_ exercise: Exercise, on item: RoutineItem, now: Date = .now) {
+        guard item.exercise !== exercise else { return }
+        item.exercise = exercise
+        touch(item, now: now)
+    }
+
     /// Sets the target sets, limited to ``RoutineRules/setsRange``.
     public static func setTargetSets(_ sets: Int, on item: RoutineItem, now: Date = .now) {
         let sets = RoutineRules.clampedSets(sets)

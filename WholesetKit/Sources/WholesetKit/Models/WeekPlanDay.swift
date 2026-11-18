@@ -3,7 +3,7 @@
 import Foundation
 import SwiftData
 
-extension SchemaV2 {
+extension SchemaV3 {
     /// One day of the weekly plan: a routine to do, or a rest day when ``routine`` is `nil`.
     @Model
     public final class WeekPlanDay {

@@ -132,6 +132,89 @@ struct SummaryView: View {
     }
 }
 
+/// After the summary: "Update Push?" listing what changed, or "Save as routine?" for a
+/// workout started without one. Nothing changes unless the first button is tapped.
+struct RoutinePromptView: View {
+    let prompt: RoutinePrompt
+    let accept: () -> Void
+    let decline: () -> Void
+
+    /// Changes listed before "and N more".
+    static let shownChanges = 2
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(title)
+                    .font(.headline)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityAddTraits(.isHeader)
+                VStack(alignment: .leading, spacing: 2) {
+                    ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
+                        Text(line)
+                            .lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .accessibilityElement(children: .combine)
+                Button(acceptTitle, action: accept)
+                    .buttonStyle(AccentButtonStyle())
+                    .padding(.top, 4)
+                Button(declineTitle, action: decline)
+                    .buttonStyle(SecondaryButtonStyle())
+            }
+            .padding(.horizontal, 4)
+        }
+    }
+
+    private var title: String {
+        switch prompt.kind {
+        case .update(let proposal): String(localized: "Update \(proposal.routineName)?")
+        case .saveAsRoutine: String(localized: "Save as routine?")
+        }
+    }
+
+    private var lines: [String] {
+        switch prompt.kind {
+        case .update(let proposal):
+            let shown = proposal.changes.prefix(Self.shownChanges).map(Self.describe)
+            let more = proposal.changes.count - shown.count
+            return more > 0 ? shown + [String(localized: "and \(more) more")] : shown
+        case .saveAsRoutine(let name):
+            return [String(localized: "Keep this workout as “\(name)” to start it again later.")]
+        }
+    }
+
+    private var acceptTitle: String {
+        switch prompt.kind {
+        case .update: String(localized: "Update routine")
+        case .saveAsRoutine: String(localized: "Save")
+        }
+    }
+
+    private var declineTitle: String {
+        switch prompt.kind {
+        case .update: String(localized: "Keep as is")
+        case .saveAsRoutine: String(localized: "Not now")
+        }
+    }
+
+    static func describe(_ change: RoutineChange) -> String {
+        switch change {
+        case let .swapped(from, to):
+            String(localized: "Swapped \(from) for \(to)")
+        case let .added(exercise, sets):
+            inflectedString("Added \(exercise), ^[\(sets) set](inflect: true)")
+        case let .setsChanged(exercise, from, to):
+            inflectedString("\(exercise): ^[\(to) set](inflect: true) instead of \(from)")
+        case .reordered:
+            String(localized: "New exercise order")
+        }
+    }
+}
+
 /// Shown on launch when a workout was still running (after a crash, force quit or reboot).
 struct RestoredView: View {
     let controller: WorkoutController

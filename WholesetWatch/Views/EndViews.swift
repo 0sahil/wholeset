@@ -58,56 +58,98 @@ struct EndConfirmView: View {
     }
 }
 
-/// The end-of-workout summary.
+/// Places a scroll view can be scrolled to (the DEBUG demo harness uses them for screenshots).
+enum ScrollAnchor: Hashable {
+    /// The summary's records.
+    case records
+    /// The summary's Done button.
+    case done
+    /// The exercise lines of the summary, or the exercise list of the Stats page.
+    case exercises
+}
+
+/// The end-of-workout summary: routine and duration, volume, sets, energy, heart rate, then
+/// the records the workout set right under those numbers (once worked out; nothing, not even
+/// a gap, while they load or when there are none), the Apple Health status, Done, and below
+/// Done one line per exercise.
+///
+/// Done comes before the exercise lines so a long workout never pushes it far down; only
+/// the records and the Health line sit above it. Done is the Double Tap primary action.
 struct SummaryView: View {
     let info: WorkoutSummaryInfo
     let unit: WeightUnit
     let done: () -> Void
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 3) {
-                ScreenHeader(title: String(localized: "Done"))
-                Text("\(info.routineName) · \(durationText)")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                HStack(alignment: .firstTextBaseline, spacing: 3) {
-                    Text(WeightFormat.volume(kilograms: info.volumeKg, unit: unit))
-                        .font(Theme.number(.title2))
-                    Text(unit.symbol)
-                        .font(.footnote.weight(.medium))
-                        .foregroundStyle(.secondary)
-                }
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel("Volume")
-                Group {
-                    if let kcal = info.activeKilocalories {
-                        Text("^[\(info.workingSets) set](inflect: true) · \(Int(kcal.rounded())) kcal")
-                    } else {
-                        Text("^[\(info.workingSets) set](inflect: true)")
-                    }
-                    switch (info.averageHeartRate, info.maxHeartRate) {
-                    case let (average?, max?):
-                        Text("\(Int(average.rounded())) avg · \(Int(max.rounded())) max bpm")
-                    case let (average?, nil):
-                        Text("\(Int(average.rounded())) avg bpm")
-                    case let (nil, max?):
-                        Text("\(Int(max.rounded())) max bpm")
-                    case (nil, nil):
-                        EmptyView()
-                    }
-                }
-                .font(.footnote.monospacedDigit())
-                healthLine
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .padding(.top, 2)
-                Button("Done", action: done)
-                    .buttonStyle(AccentButtonStyle())
-                    .padding(.top, 6)
+        ScrollViewReader { proxy in
+            ScrollView {
+                content
             }
-            .padding(.horizontal, 4)
+            #if DEBUG
+            .task(id: info.records) {
+                // `-WholesetDemoScroll`: once the records are in, scroll for a screenshot.
+                guard info.records != .loading, let anchor = DemoHarness.requestedScrollAnchor() else { return }
+                await Task.yield()
+                proxy.scrollTo(anchor, anchor: .top)
+            }
+            #endif
         }
+    }
+
+    private var content: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            ScreenHeader(title: String(localized: "Done"))
+            Text("\(info.routineName) · \(durationText)")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+            HStack(alignment: .firstTextBaseline, spacing: 3) {
+                Text(WeightFormat.volume(kilograms: info.volumeKg, unit: unit))
+                    .font(Theme.number(.title2))
+                Text(unit.symbol)
+                    .font(.footnote.weight(.medium))
+                    .foregroundStyle(.secondary)
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Volume")
+            Group {
+                if let kcal = info.activeKilocalories {
+                    Text("^[\(info.workingSets) set](inflect: true) · \(Int(kcal.rounded())) kcal")
+                } else {
+                    Text("^[\(info.workingSets) set](inflect: true)")
+                }
+                switch (info.averageHeartRate, info.maxHeartRate) {
+                case let (average?, max?):
+                    Text("\(Int(average.rounded())) avg · \(Int(max.rounded())) max bpm")
+                case let (average?, nil):
+                    Text("\(Int(average.rounded())) avg bpm")
+                case let (nil, max?):
+                    Text("\(Int(max.rounded())) max bpm")
+                case (nil, nil):
+                    EmptyView()
+                }
+            }
+            .font(.footnote.monospacedDigit())
+            if case .loaded(let records) = info.records, !records.isEmpty {
+                SummaryRecordsSection(records: records, unit: unit)
+                    .padding(.top, 4)
+                    .id(ScrollAnchor.records)
+            }
+            healthLine
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .padding(.top, 2)
+            Button("Done", action: done)
+                .buttonStyle(AccentButtonStyle())
+                .handGestureShortcut(.primaryAction)
+                .padding(.top, 6)
+                .id(ScrollAnchor.done)
+            if !info.exercises.isEmpty {
+                SummaryExercisesSection(lines: info.exercises, unit: unit)
+                    .padding(.top, 10)
+                    .id(ScrollAnchor.exercises)
+            }
+        }
+        .padding(.horizontal, 4)
     }
 
     private var durationText: String {
@@ -128,6 +170,60 @@ struct SummaryView: View {
             Label("Saved to Apple Health", systemImage: "heart.fill")
         case .notSaved:
             Text("Not saved to Apple Health.")
+        }
+    }
+}
+
+/// "2 records" in the accent, then one line per record, e.g. "Bench Press e1RM 83.3 kg".
+private struct SummaryRecordsSection: View {
+    let records: SessionRecords
+    let unit: WeightUnit
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text("^[\(records.count) record](inflect: true)")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(Theme.accent)
+                .accessibilityAddTraits(.isHeader)
+            ForEach(records.records) { record in
+                Text(SummaryText.record(record, unit: unit))
+                    .font(.footnote.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityLabel(SummaryText.spokenRecord(record, unit: unit))
+            }
+        }
+    }
+}
+
+/// One line per exercise with logged working sets: the name, then
+/// "3 sets · top 62.5×8 · 1,500 kg".
+private struct SummaryExercisesSection: View {
+    let lines: [ExerciseSummaryLine]
+    let unit: WeightUnit
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Exercises")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .accessibilityAddTraits(.isHeader)
+            ForEach(lines) { line in
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(line.exerciseName)
+                        .font(.footnote.weight(.medium))
+                        .lineLimit(2)
+                    Text(SummaryText.exerciseDetail(line, unit: unit))
+                        .font(.footnote.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(line.exerciseName)
+                .accessibilityValue(SummaryText.spokenExerciseDetail(line, unit: unit))
+            }
         }
     }
 }

@@ -19,6 +19,9 @@ struct ExercisePage: View {
     let toggle: (ValueTile) -> Void
     let adjust: (ValueTile, Int) -> Void
     let openMenu: () -> Void
+    /// Whether "Log set" is the Double Tap primary action: only while this page is on screen
+    /// and no sheet is up.
+    let isPrimaryAction: Bool
     let applyHint: () -> Void
     let log: () -> Void
 
@@ -110,6 +113,7 @@ struct ExercisePage: View {
                     Text("Log set \(number)")
                 }
                 .buttonStyle(AccentButtonStyle())
+                .handGestureShortcut(.primaryAction, isEnabled: isPrimaryAction)
                 .accessibilityHint("Saves this set and starts the rest timer.")
             }
         }
@@ -248,29 +252,28 @@ struct ExerciseDonePage: View {
     let crownFocus: CrownFocus
     /// The page's Crown, used by the static layout only.
     let pageCrown: PageCrown
+    /// Whether "Next" is the Double Tap primary action: only while this page is on screen
+    /// and no sheet is up. "End workout" never is.
+    let isPrimaryAction: Bool
     let openMenu: () -> Void
 
     var body: some View {
         let next = nextEntry
-        ViewThatFits(in: .vertical) {
-            VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: 4) {
+            // The buttons are built once, below the choice of layout, so there is only ever
+            // one "Next" (and one primary action) in the hierarchy.
+            ViewThatFits(in: .vertical) {
                 summary(next: next)
-                Spacer(minLength: 4)
-                actions(next: next)
-            }
-            .modifier(pageCrown)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    .modifier(pageCrown)
 
-            ScrollView {
-                summary(next: next)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                ScrollView {
+                    summary(next: next)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .claimsCrown(.doneTable, with: crownFocus)
             }
-            .claimsCrown(.doneTable, with: crownFocus)
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                // Opaque, so rows scrolled under the buttons do not show through.
-                actions(next: next)
-                    .padding(.top, 4)
-                    .background(.black)
-            }
+            actions(next: next)
         }
     }
 
@@ -312,6 +315,7 @@ struct ExerciseDonePage: View {
                     controller.selectEntry(at: next.index)
                 }
                 .buttonStyle(AccentButtonStyle())
+                .handGestureShortcut(.primaryAction, isEnabled: isPrimaryAction)
                 .accessibilityLabel("Next: \(next.name)")
             } else {
                 Button("End workout") {

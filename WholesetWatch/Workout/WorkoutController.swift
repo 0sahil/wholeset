@@ -7,8 +7,11 @@ import SwiftData
 import WatchKit
 import WholesetKit
 
-/// The two horizontal pages of a running workout.
+/// The horizontal pages of a running workout, left to right. A workout opens on the
+/// exercise page.
 enum WorkoutPage: Hashable {
+    /// The system Now Playing controls.
+    case nowPlaying
     case exercise
     case stats
 }
@@ -75,6 +78,15 @@ enum HealthSaveStatus: Equatable {
     case notSaved
 }
 
+/// The records part of the summary, worked out from the store after End.
+enum SummaryRecordsState: Equatable {
+    /// Still being worked out; nothing is shown yet.
+    case loading
+    case loaded(SessionRecords)
+    /// The store could not be read; the summary shows no records.
+    case unavailable
+}
+
 /// What the summary screen shows.
 struct WorkoutSummaryInfo: Equatable {
     let sessionID: UUID
@@ -86,6 +98,10 @@ struct WorkoutSummaryInfo: Equatable {
     var maxHeartRate: Double?
     var activeKilocalories: Double?
     var health: HealthSaveStatus
+    /// The records the workout set, filled in shortly after End.
+    var records: SummaryRecordsState
+    /// One line per exercise with logged working sets, in workout order.
+    let exercises: [ExerciseSummaryLine]
     /// Offered after the summary's Done, computed when the workout ended.
     var followUp: RoutinePrompt?
 }
@@ -430,6 +446,14 @@ final class WorkoutController {
         persistState()
     }
 
+    /// Goes to the exercise at `index` from a list of exercises: selects it, shows the
+    /// exercise page and closes any sheet.
+    func jumpToEntry(at index: Int) {
+        selectEntry(at: index)
+        page = .exercise
+        sheet = nil
+    }
+
     /// Sets the current set's weight (not saved until ``commitEdits()`` or logging).
     func setWeight(_ kilograms: Double?) {
         engine?.setCurrentWeight(kilograms)
@@ -671,8 +695,8 @@ final class WorkoutController {
         restChanged()
     }
 
-    /// Ends the workout: saves the session, shows the summary, then saves the Health
-    /// workout in the background and fills in its numbers.
+    /// Ends the workout: saves the session, shows the summary, then works out the records
+    /// and saves the Health workout in the background, filling each in when it is ready.
     func endWorkout() {
         guard let engine, let clock else { return }
         let endDate = now()
@@ -689,6 +713,7 @@ final class WorkoutController {
         let session = engine.session
         // Computed now: the engine is gone after End, and the session no longer changes.
         let followUp = routinePrompt(for: session)
+        let exercises = HistorySnapshot.session(from: session).map(ExerciseSummaryLine.lines(for:)) ?? []
         let recording = [.preparing, .running, .paused].contains(health.state)
         phase = .summary(WorkoutSummaryInfo(
             sessionID: session.id,
@@ -700,8 +725,11 @@ final class WorkoutController {
             maxHeartRate: nil,
             activeKilocalories: recording ? health.activeKilocalories : nil,
             health: recording ? .saving : .notSaved,
+            records: .loading,
+            exercises: exercises,
             followUp: followUp
         ))
+        loadRecords(forSession: session.id)
 
         Task {
             let result = await health.end(at: endDate)
@@ -714,6 +742,24 @@ final class WorkoutController {
             info.maxHeartRate = result?.maxHeartRate
             info.activeKilocalories = result?.activeKilocalories ?? info.activeKilocalories
             info.health = result?.workoutID == nil ? .notSaved : .saved
+            phase = .summary(info)
+        }
+    }
+
+    /// Works out the records the finished session set, off the main actor with a context
+    /// of its own (the session is already saved), and fills them into its summary.
+    private func loadRecords(forSession sessionID: UUID) {
+        let container = context.container
+        Task {
+            let state: SummaryRecordsState
+            do {
+                state = try await SessionRecords.load(sessionID: sessionID, from: container).map(SummaryRecordsState.loaded) ?? .unavailable
+            } catch {
+                logger.error("Could not work out records: \(error, privacy: .public)")
+                state = .unavailable
+            }
+            guard case .summary(var info) = phase, info.sessionID == sessionID else { return }
+            info.records = state
             phase = .summary(info)
         }
     }

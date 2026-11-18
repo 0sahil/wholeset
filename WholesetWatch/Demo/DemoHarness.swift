@@ -8,7 +8,9 @@ import WholesetKit
 /// Screens the DEBUG demo harness can open straight into, for screenshots.
 ///
 /// Launch with `-WholesetDemo <screen>`, optionally `-WholesetDemoUnit lb` (as if pounds
-/// had been chosen on iPhone and synced). The app then uses an in-memory store with the
+/// had been chosen on iPhone and synced) and `-WholesetDemoScroll <records|done|exercises>`
+/// (the summary scrolls there once its records are in; Stats takes `exercises`). The app
+/// then uses an in-memory store with the
 /// library and starter routines, canned workout data and a fake HealthKit manager.
 /// Nothing of this is compiled into Release builds.
 enum DemoScreen: String, CaseIterable {
@@ -24,10 +26,22 @@ enum DemoScreen: String, CaseIterable {
     /// A warm-up and four working sets logged: the done page's table scrolls.
     case doneLong = "done-long"
     case rest
+    /// The Now Playing page left of the exercise.
+    case nowPlaying = "now-playing"
+    /// The Now Playing page while a rest runs: the title is the countdown.
+    case nowPlayingRest = "now-playing-rest"
     case menu
+    /// Stats with the exercise list: one complete, the current one, one skipped.
     case stats
+    /// Stats while the workout is paused.
+    case statsPaused = "stats-paused"
     case endConfirm = "end-confirm"
+    /// A real End after yesterday's history: records and per-exercise lines.
     case summary
+    /// A real End that matches or trails the history: no records.
+    case summaryNoRecords = "summary-no-records"
+    /// A real End of a long workout (eleven exercises), to check that Done stays near.
+    case summaryLong = "summary-long"
     case restored
     case restoredNoHealth = "restored-nohealth"
     /// Set 1 of Bench Press with "last 60 × 10" from yesterday's workout, no chip.
@@ -51,10 +65,23 @@ enum DemoScreen: String, CaseIterable {
 enum DemoHarness {
     private static let screenArgument = "-WholesetDemo"
     private static let unitArgument = "-WholesetDemoUnit"
+    private static let scrollArgument = "-WholesetDemoScroll"
 
     /// The screen requested on the command line, if any.
     static func requestedScreen(arguments: [String] = ProcessInfo.processInfo.arguments) -> DemoScreen? {
         value(after: screenArgument, in: arguments).flatMap(DemoScreen.init(rawValue:))
+    }
+
+    /// Where a demo screen should scroll once loaded (`-WholesetDemoScroll`), if anywhere.
+    /// Only for demo launches: without `-WholesetDemo` it is ignored.
+    static func requestedScrollAnchor(arguments: [String] = ProcessInfo.processInfo.arguments) -> ScrollAnchor? {
+        guard requestedScreen(arguments: arguments) != nil else { return nil }
+        switch value(after: scrollArgument, in: arguments) {
+        case "records": return .records
+        case "done": return .done
+        case "exercises": return .exercises
+        default: return nil
+        }
     }
 
     private static func requestedUnit(arguments: [String] = ProcessInfo.processInfo.arguments) -> WeightUnit {
@@ -116,19 +143,6 @@ enum DemoHarness {
         case .countdown:
             controller.installDemoPhase(.countdown(CountdownInfo(routineName: "Push", endsAt: .now.addingTimeInterval(2), isFrozen: true)))
             return
-        case .summary:
-            controller.installDemoPhase(.summary(WorkoutSummaryInfo(
-                sessionID: UUID(),
-                routineName: "Push",
-                duration: 58 * 60,
-                workingSets: 15,
-                volumeKg: 6240,
-                averageHeartRate: 128,
-                maxHeartRate: 161,
-                activeKilocalories: 412,
-                health: .saved
-            )))
-            return
         default:
             break
         }
@@ -148,6 +162,9 @@ enum DemoHarness {
             return
         case .updateRoutine, .saveAsRoutine:
             try installRoutinePrompt(for: screen, controller: controller, exercises: exercises, bar: bar, context: context)
+            return
+        case .summary, .summaryNoRecords, .summaryLong:
+            try endDemoWorkout(for: screen, controller: controller, health: health, exercises: exercises, unit: unit, context: context)
             return
         default:
             break
@@ -191,6 +208,11 @@ enum DemoHarness {
             try log(bar, 8)
         case .rest:
             rest = RestTimer.start(duration: 150, now: .now.addingTimeInterval(-40))
+        case .nowPlaying:
+            controller.page = .nowPlaying
+        case .nowPlayingRest:
+            rest = RestTimer.start(duration: 150, now: .now.addingTimeInterval(-66))
+            controller.page = .nowPlaying
         case .menu:
             controller.openMenu()
         case .swap:
@@ -200,7 +222,13 @@ enum DemoHarness {
         case .allExercisesEdit:
             try engine.setSkipped(true, for: engine.entries[engine.entries.count - 1])
             controller.openMenu(at: [.allExercises(editing: true)])
-        case .stats:
+        case .stats, .statsPaused:
+            // Bench Press complete, Overhead Press current with a set logged, the last skipped.
+            try log(bar, 10)
+            try log(bar, 9)
+            engine.select(entryAt: 1)
+            try log(unit == .kg ? 40 : WeightUnit.lb.kilograms(fromValue: 85), 8)
+            try engine.setSkipped(true, for: engine.entries[engine.entries.count - 1])
             controller.page = .stats
         case .endConfirm:
             try log(bar, 10)
@@ -214,8 +242,8 @@ enum DemoHarness {
             try log(bar, 9)
             health.recoveryStatus = .failed
             phase = .restored
-        case .home, .homeSyncing, .countdown, .summary, .exercise, .lastLine, .progressionChip,
-             .emptyWorkout, .updateRoutine, .saveAsRoutine:
+        case .home, .homeSyncing, .countdown, .exercise, .lastLine, .progressionChip,
+             .emptyWorkout, .updateRoutine, .saveAsRoutine, .summary, .summaryNoRecords, .summaryLong:
             break
         }
         try context.save()
@@ -223,6 +251,87 @@ enum DemoHarness {
             health.simulateRunning()
         }
         controller.installDemoWorkout(engine: engine, clock: WorkoutClock(startedAt: startedAt), rest: rest, phase: phase)
+        if screen == .statsPaused {
+            controller.togglePause()
+        }
+    }
+
+    /// Logs a Push workout against the canned history (see ``addHistory(exercises:unit:bar:benchHitsTop:context:)``)
+    /// and ends it through the controller, so the summary, its records and its exercise
+    /// lines all come from the real code.
+    ///
+    /// - `summary`: Bench Press and Lateral Raise beat yesterday (heavier, better estimate);
+    ///   Incline Dumbbell Press is new (no records); Triceps Pushdown is skipped.
+    /// - `summaryNoRecords`: everything matches or trails yesterday.
+    /// - `summaryLong`: `summary` plus six more exercises, Face Pull beating its history.
+    private static func endDemoWorkout(
+        for screen: DemoScreen,
+        controller: WorkoutController,
+        health: FakeWorkoutManager,
+        exercises: [String: Exercise],
+        unit: WeightUnit,
+        context: ModelContext
+    ) throws {
+        func kilograms(_ kg: Double, _ lb: Double) -> Double {
+            unit == .kg ? kg : WeightUnit.lb.kilograms(fromValue: lb)
+        }
+        guard let push = TodayPlanResolver.sortedRoutines(try context.fetch(FetchDescriptor<Routine>())).first else { return }
+        let engine = try WorkoutEngine.start(routine: push, in: context, defaultRestSeconds: 90, progressionSettings: controller.progression)
+        let startedAt = Date.now.addingTimeInterval(-58 * 60)
+        engine.session.startedAt = startedAt
+
+        func logSets(_ sets: [(Double, Int)]) throws {
+            for (weight, reps) in sets {
+                engine.setCurrentWeight(weight)
+                engine.setCurrentReps(reps)
+                try engine.logCurrentSet()
+            }
+        }
+        func logEntry(named name: String, _ sets: [(Double, Int)]) throws {
+            guard let index = engine.entries.firstIndex(where: { $0.exercise?.name == name }) else { return }
+            engine.select(entryAt: index)
+            try logSets(sets)
+        }
+
+        if screen == .summaryNoRecords {
+            let bar = kilograms(60, 135)
+            try logEntry(named: "Bench Press", [(bar, 10), (bar, 9), (bar, 8)])
+            let press = kilograms(40, 85)
+            try logEntry(named: "Overhead Press", [(press, 8), (press, 7), (press, 7)])
+            let raise = kilograms(8, 17.5)
+            try logEntry(named: "Lateral Raise", [(raise, 12), (raise, 12), (raise, 12)])
+        } else {
+            let bench = kilograms(62.5, 140)
+            try logEntry(named: "Bench Press", [(bench, 10), (bench, 8), (bench, 7)])
+            let press = kilograms(40, 85)
+            try logEntry(named: "Overhead Press", [(press, 8), (press, 8), (press, 7)])
+            let incline = kilograms(22, 50)
+            try logEntry(named: "Incline Dumbbell Press", [(incline, 10), (incline, 10), (incline, 9)])
+            let raise = kilograms(10, 22.5)
+            try logEntry(named: "Lateral Raise", [(raise, 12), (raise, 10), (raise, 8)])
+        }
+        if let triceps = engine.entries.first(where: { $0.exercise?.name == "Triceps Pushdown" }) {
+            try engine.setSkipped(true, for: triceps)
+        }
+        if screen == .summaryLong {
+            let extras: [(String, Double, Int)] = [
+                ("Face Pull", kilograms(22.5, 50), 15),
+                ("Dumbbell Curl", kilograms(12, 25), 10),
+                ("Lat Pulldown", kilograms(50, 110), 10),
+                ("Leg Press", kilograms(120, 265), 12),
+                ("Leg Curl", kilograms(40, 90), 12),
+                ("Standing Calf Raise", kilograms(60, 135), 15),
+            ]
+            for (name, weight, reps) in extras {
+                guard let exercise = exercises[name] else { continue }
+                try engine.addExercise(exercise)
+                try logEntry(named: name, [(weight, reps), (weight, reps), (weight, reps - 2)])
+            }
+        }
+        try context.save()
+        health.simulateRunning()
+        controller.installDemoWorkout(engine: engine, clock: WorkoutClock(startedAt: startedAt), rest: nil, phase: .active)
+        controller.endWorkout()
     }
 
     /// Yesterday's finished Push workout plus an older one with other exercises, so pre-fill,

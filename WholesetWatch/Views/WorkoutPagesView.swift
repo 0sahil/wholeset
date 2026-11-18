@@ -3,9 +3,17 @@
 import SwiftUI
 import WholesetKit
 
-/// The running workout: the exercise page and the Stats page side by side (swipe
-/// horizontally), the elapsed clock in the top bar of both, plus the ••• menu and the End
-/// confirmation as sheets.
+/// The running workout: Now Playing, the exercise page and the Stats page side by side
+/// (swipe horizontally; it opens on the exercise page), the elapsed clock in the top bar of
+/// all three, plus the ••• menu and the End confirmation as sheets.
+///
+/// The Digital Crown belongs to the page on screen. The `TabView` keeps the pages next to
+/// the visible one alive, so each page takes the Crown only while it is showing and lets go
+/// when it is swiped away: the exercise page (edit a tile or move between exercises), Stats
+/// (scroll), and on Now Playing none of the app's views, so the system view sets the volume.
+///
+/// Likewise only one control at a time is the Double Tap primary action: "Log set" or the
+/// done page's "Next", and only while the exercise page is showing with no sheet up.
 struct WorkoutPagesView: View {
     @Bindable var controller: WorkoutController
     /// Counts sheets that finished closing, so the exercise page can take the Crown back.
@@ -14,18 +22,26 @@ struct WorkoutPagesView: View {
     var body: some View {
         NavigationStack {
             TabView(selection: $controller.page) {
+                NowPlayingPage()
+                    .tag(WorkoutPage.nowPlaying)
                 ExerciseTab(controller: controller, sheetDismissals: sheetDismissals)
                     .tag(WorkoutPage.exercise)
-                StatsView(controller: controller)
+                StatsView(controller: controller, sheetDismissals: sheetDismissals)
                     .tag(WorkoutPage.stats)
             }
             .tabViewStyle(.page)
             .containerBackground(.black, for: .tabView)
             // On the TabView rather than on each page, so the clock stays put while swiping.
+            // On Now Playing the page title sits here too, leaving the system view the
+            // whole content area.
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     if let clock = controller.clock {
-                        WorkoutClockLabel(clock: clock)
+                        if controller.page == .nowPlaying {
+                            NowPlayingTopBar(clock: clock, rest: controller.isPaused ? nil : controller.rest)
+                        } else {
+                            WorkoutClockLabel(clock: clock)
+                        }
                     }
                 }
             }
@@ -65,6 +81,9 @@ struct CrownFocus {
     /// The exercise page's focus scope, in which the target prefers default focus.
     let scope: Namespace.ID
     let claim: CrownClaim
+    /// Whether the exercise page is the page on screen. When it is not, its Crown view
+    /// cannot be focused at all, so it never keeps the Crown from Now Playing or Stats.
+    let isPageShowing: Bool
 }
 
 extension View {
@@ -94,7 +113,7 @@ struct PageCrown: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .focusable()
+            .focusable(focus.isPageShowing)
             .claimsCrown(.page, with: focus)
             .focusEffectDisabled()
             .digitalCrownRotation(
@@ -161,8 +180,11 @@ private struct ExerciseTab: View {
             applyInitialSelection()
         }
         .onDisappear(perform: editor.release)
-        .onChange(of: controller.page) { _, _ in
+        .onChange(of: controller.page) { _, page in
             editor.release()
+            // Swiped away: give the Crown up (to the Now Playing volume or the Stats scroll).
+            // The claim takes it back when the exercise page shows again.
+            if page != .exercise { crownFocus = nil }
         }
         .onChange(of: scenePhase) { _, phase in
             // Wrist down or app switch: save and let go of the tile.
@@ -175,10 +197,17 @@ private struct ExerciseTab: View {
             binding: $crownFocus,
             scope: crownScope,
             claim: CrownClaim(
-                isEligible: scenePhase == .active && controller.page == .exercise && controller.sheet == nil,
+                isEligible: isInteractive,
                 sheetDismissals: sheetDismissals
-            )
+            ),
+            isPageShowing: controller.page == .exercise
         )
+    }
+
+    /// The app is active, the exercise page is on screen and no sheet is up: the page may
+    /// take the Crown, and its main button is the Double Tap primary action.
+    private var isInteractive: Bool {
+        scenePhase == .active && controller.page == .exercise && controller.sheet == nil
     }
 
     @ViewBuilder
@@ -201,6 +230,7 @@ private struct ExerciseTab: View {
                     toggle: toggle,
                     adjust: editor.adjust,
                     openMenu: openMenu,
+                    isPrimaryAction: isInteractive,
                     applyHint: {
                         // Save any Crown edit first, so the hint is applied over it.
                         editor.release()
@@ -220,6 +250,7 @@ private struct ExerciseTab: View {
                     entry: entry,
                     crownFocus: focus,
                     pageCrown: pageCrown,
+                    isPrimaryAction: isInteractive,
                     openMenu: openMenu
                 )
             }

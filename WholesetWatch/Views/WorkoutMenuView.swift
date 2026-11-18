@@ -253,13 +253,10 @@ private struct AllExercisesView: View {
                     EditRow(controller: controller, engine: engine, entry: entry, index: index)
                 } else {
                     Button {
-                        controller.selectEntry(at: index)
-                        controller.page = .exercise
-                        controller.sheet = nil
+                        controller.jumpToEntry(at: index)
                     } label: {
-                        ProgressRow(engine: engine, entry: entry)
+                        ProgressRow(engine: engine, entry: entry, isCurrent: isCurrent)
                     }
-                    .accessibilityAddTraits(isCurrent ? .isSelected : [])
                 }
             }
             .listRowBackground(
@@ -280,10 +277,13 @@ private struct AllExercisesView: View {
     }
 }
 
-/// Name and "1/3" (or "Skipped").
-private struct ProgressRow: View {
+/// Name and "1/3" (in the accent once complete) or "Skipped", for the exercise lists of the
+/// ••• menu and the Stats page. VoiceOver reads e.g. "Bench Press, 3 of 3 sets logged, current".
+struct ProgressRow: View {
     let engine: WorkoutEngine
     let entry: SessionExercise
+    /// Whether this is the exercise on the exercise page.
+    var isCurrent = false
 
     var body: some View {
         let progress = engine.progress(of: entry)
@@ -302,13 +302,16 @@ private struct ProgressRow: View {
             .font(.footnote.monospacedDigit())
             .foregroundStyle(progress.isDone && !progress.isSkipped ? Theme.accent : .secondary)
         }
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(entry.exercise?.name ?? "")
         .accessibilityValue(spokenProgress(progress))
     }
 
     private func spokenProgress(_ progress: ExerciseProgress) -> String {
-        if progress.isSkipped { return String(localized: "Skipped") }
-        return inflectedString("\(progress.completed) of ^[\(progress.total) set](inflect: true) logged")
+        let text = progress.isSkipped
+            ? String(localized: "Skipped")
+            : inflectedString("\(progress.completed) of ^[\(progress.total) set](inflect: true) logged")
+        return isCurrent ? String(localized: "\(text), current") : text
     }
 }
 

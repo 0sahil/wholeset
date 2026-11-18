@@ -48,16 +48,22 @@ struct AccentButtonStyle: ButtonStyle {
 /// A full-width dark grey capsule.
 struct SecondaryButtonStyle: ButtonStyle {
     var foreground: Color = .white
+    /// Keeps the label on one line at its natural size, with less side padding, for two
+    /// buttons side by side. The label never wraps or shrinks, so its ideal width is honest
+    /// and the row can switch to another layout (for example a `ViewThatFits` stack) when
+    /// the pair does not fit.
+    var isSingleLine = false
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.body.weight(.medium))
             .foregroundStyle(foreground)
-            .lineLimit(2)
-            .minimumScaleFactor(0.8)
+            .lineLimit(isSingleLine ? 1 : 2)
+            .minimumScaleFactor(isSingleLine ? 1 : 0.8)
+            .fixedSize(horizontal: isSingleLine, vertical: false)
             .multilineTextAlignment(.center)
             .frame(maxWidth: .infinity, minHeight: Theme.minTapHeight)
-            .padding(.horizontal, 8)
+            .padding(.horizontal, isSingleLine ? 4 : 8)
             .background(Theme.control, in: Capsule())
             .opacity(configuration.isPressed ? 0.7 : 1)
             .contentShape(Capsule())

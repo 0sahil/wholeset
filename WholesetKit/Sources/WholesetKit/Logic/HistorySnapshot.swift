@@ -142,6 +142,12 @@ public enum HistorySnapshot {
         make(session, entries: session.sortedEntries) { $0.sortedSets }
     }
 
+    /// The value of `session` with only `entries` (some of its exercises, in order), or `nil`
+    /// while it is still in progress.
+    static func session(from session: Session, entries: [SessionExercise]) -> HistorySession? {
+        make(session, entries: entries) { $0.sortedSets }
+    }
+
     /// The finished sessions among `sessions`, oldest first (see ``isEarlier(_:_:)``).
     public static func sessions(from sessions: some Sequence<Session>) -> [HistorySession] {
         sessions.compactMap { session(from: $0) }.sorted(by: isEarlier)

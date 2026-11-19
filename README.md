@@ -94,7 +94,7 @@ The script archives the `Wholeset` scheme (the iPhone app with the Watch app ins
 
 ```sh
 swift Scripts/make-app-icon.swift               # default variant into both asset catalogs
-swift Scripts/make-app-icon.swift barbell       # another variant: w (default), dots, barbell
+swift Scripts/make-app-icon.swift barbell       # another variant: ezbar (default), w, dots, barbell
 swift Scripts/make-app-icon.swift path/to/dir/  # contact sheet of all variants, catalogs untouched
 swift Scripts/make-app-icon.swift --list        # the variants
 ```

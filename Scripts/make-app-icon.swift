@@ -9,10 +9,14 @@
 //   swift Scripts/make-app-icon.swift dots path/to/dir contact sheet with `dots` marked as selected
 //   swift Scripts/make-app-icon.swift --list           the variant names
 //
+// The contact sheet is written as icon-preview-<variant>.png, named after the selected variant.
+//
 // Asset catalogs (all 1024 x 1024 single-size entries, as Xcode creates them):
-//   Wholeset/Assets.xcassets/AppIcon.appiconset       default (opaque, no alpha channel), dark
-//                                                     (accent mark on a transparent background, the
-//                                                     system adds its dark backdrop), tinted (grayscale)
+//   Wholeset/Assets.xcassets/AppIcon.appiconset       default (opaque, no alpha channel), dark, tinted
+//                                                     (grayscale, opaque). The ezbar dark icon is opaque
+//                                                     with its own dark background; the other variants
+//                                                     put the accent mark on a transparent background
+//                                                     and let the system add its dark backdrop.
 //   WholesetWatch/Assets.xcassets/AppIcon.appiconset  opaque; watchOS masks it to a circle
 //
 // An argument is an output directory if it contains a "/" or names an existing directory.
@@ -50,27 +54,71 @@ let tintedBackground = RGB(0x000000)
 
 // MARK: - Variants
 
-/// A candidate mark. Each draws in a unit square centred on the origin (y up), so
-/// the inscribed circle the Watch keeps has radius 0.5. Every mark stays inside radius 0.40.
+/// A candidate icon. Every mark stays inside 0.40 of the icon's side from the centre, so the
+/// circle the Watch keeps (radius 0.5) never cuts it.
 enum Variant: String, CaseIterable {
+    case ezbar
     case w
     case dots
     case barbell
 
-    static let `default` = Variant.w
+    static let `default` = Variant.ezbar
 
     var summary: String {
         switch self {
+        case .ezbar: "EZ curl bar: the bar's zigzag forms a W, two plates a side"
         case .w: "geometric W: one rounded stroke, the app's initial"
         case .dots: "set dots: 1, 2 and 3 logged sets, the exercise page's dots building up"
         case .barbell: "barbell profile: two plates a side on a bar"
         }
     }
 
-    func draw(in context: CGContext, color: CGColor) {
+    /// Whether the PNG for `appearance` is written without an alpha channel.
+    func isOpaque(_ appearance: Appearance) -> Bool {
+        appearance != .iosDark || self == .ezbar
+    }
+
+    /// Draws the whole icon (background included) into a `side` x `side` context.
+    func render(_ appearance: Appearance, in context: CGContext, side: CGFloat) {
+        switch self {
+        case .ezbar:
+            EZBar.draw(appearance, in: context, side: side)
+        case .w, .dots, .barbell:
+            drawFlat(appearance, in: context, side: side)
+        }
+    }
+
+    /// A single-colour mark on a flat background (transparent for dark, which the system backs).
+    private func drawFlat(_ appearance: Appearance, in context: CGContext, side: CGFloat) {
+        let full = CGRect(x: 0, y: 0, width: side, height: side)
+        let markColor: CGColor
+        switch appearance {
+        case .iosDefault, .watch:
+            context.setFillColor(iconBackground.cgColor())
+            context.fill(full)
+            markColor = accent.cgColor()
+        case .iosDark:
+            context.clear(full)
+            markColor = accent.cgColor()
+        case .iosTinted:
+            context.setFillColor(tintedBackground.cgColor())
+            context.fill(full)
+            markColor = tintedMark.cgColor()
+        }
+        context.saveGState()
+        context.translateBy(x: side / 2, y: side / 2)
+        context.scaleBy(x: side, y: side)
+        drawMark(in: context, color: markColor)
+        context.restoreGState()
+    }
+
+    /// Draws a flat mark in a unit square centred on the origin (y up).
+    private func drawMark(in context: CGContext, color: CGColor) {
         context.setFillColor(color)
         context.setStrokeColor(color)
         switch self {
+        case .ezbar:
+            preconditionFailure("ezbar is drawn by EZBar.draw, not as a flat mark")
         case .w:
             // Outer arms reach higher than the middle apex; round caps and joins match the
             // rounded figures used on the Watch.
@@ -115,12 +163,192 @@ enum Variant: String, CaseIterable {
     }
 }
 
+// MARK: - EZ bar
+
+/// The EZ curl bar icon. Its geometry is laid out on a 1024-point design grid with y pointing
+/// down, so `draw` flips the context once and uses the grid numbers as they are.
+enum EZBar {
+    /// One gradient stop: location, colour, opacity.
+    typealias Stop = (location: CGFloat, color: RGB, alpha: CGFloat)
+
+    /// How a plate is filled.
+    enum Paint {
+        case solid(RGB)
+        /// A linear gradient from the top-left corner of the shape's bounding box to `end`,
+        /// in unit coordinates of that box (so the gradient stretches with the box).
+        case linear([Stop], end: CGPoint)
+    }
+
+    struct Shadow {
+        /// Downward offset and Gaussian standard deviation, in design points.
+        let offset: CGFloat, deviation: CGFloat
+        let color: RGB, alpha: CGFloat
+    }
+
+    struct Style {
+        let bar: RGB
+        let collar: RGB
+        let plate: Paint
+        let shadow: Shadow?
+    }
+
+    // Geometry (design points).
+
+    static let canvas: CGFloat = 1024
+    static let barWidth: CGFloat = 56
+    /// Centre line of the bar: a sleeve on each side, then a zigzag whose two dips and lower
+    /// middle peak form a W. Stroked with round caps and joins.
+    static let barLine: [CGPoint] = [
+        CGPoint(x: 176, y: 400), CGPoint(x: 300, y: 400), CGPoint(x: 406, y: 650), CGPoint(x: 512, y: 512.5),
+        CGPoint(x: 618, y: 650), CGPoint(x: 724, y: 400), CGPoint(x: 848, y: 400),
+    ]
+    /// Per side, inside out: the collar on the sleeve, the tall inner plate, the short outer plate.
+    static let collars = [CGRect(x: 235, y: 362, width: 30, height: 76), CGRect(x: 759, y: 362, width: 30, height: 76)]
+    static let innerPlates = [CGRect(x: 173, y: 250, width: 58, height: 300), CGRect(x: 793, y: 250, width: 58, height: 300)]
+    static let outerPlates = [CGRect(x: 119, y: 287, width: 46, height: 226), CGRect(x: 859, y: 287, width: 46, height: 226)]
+    static let collarRadius: CGFloat = 10
+    static let plateRadius: CGFloat = 22
+    /// The mark is scaled about the canvas centre after moving this grid point onto it, which
+    /// centres the bar's visual mass and keeps the plates inside the Watch circle.
+    static let markScale: CGFloat = 0.9
+    static let markCenter = CGPoint(x: 512, y: 485)
+
+    // Colours.
+
+    /// Default background: light orange at the top left to deep orange at the bottom right.
+    static let orangeBackground: [Stop] = [(0, RGB(0xFFB15C), 1), (0.55, RGB(0xFF8A3D), 1), (1, RGB(0xF0501E), 1)]
+    /// White plates warming slightly toward the bottom.
+    static let whitePlate = Paint.linear([(0, RGB(0xFFFFFF), 1), (1, RGB(0xFFE7D6), 1)], end: CGPoint(x: 0, y: 1))
+    /// Orange plates for the dark icon, light at the top left.
+    static let orangePlate = Paint.linear([(0, RGB(0xFFB060), 1), (1, RGB(0xE5501C), 1)], end: CGPoint(x: 1, y: 1))
+    /// Dark background: a radial grey centred a little above the middle, fading to near-black.
+    static let darkBackground: [Stop] = [(0, RGB(0x2A2A2E), 1), (1, RGB(0x0B0B0C), 1)]
+    static let darkBackgroundCenter = CGPoint(x: 512, y: 0.38 * 1024)
+    static let darkBackgroundRadius: CGFloat = 0.75 * 1024
+    /// Soft accent glow behind the dark icon's mark.
+    static let glow: [Stop] = [(0, accent, 0.45), (1, accent, 0)]
+    static let glowRadius: CGFloat = 420
+
+    static func style(for appearance: Appearance) -> Style {
+        switch appearance {
+        case .iosDefault, .watch:
+            Style(bar: RGB(0xFFFFFF), collar: RGB(0xFFE0CC), plate: whitePlate,
+                  shadow: Shadow(offset: 16, deviation: 20, color: RGB(0x7A2000), alpha: 0.35))
+        case .iosDark:
+            Style(bar: RGB(0xE9E4DF), collar: RGB(0x9A9590), plate: orangePlate,
+                  shadow: Shadow(offset: 14, deviation: 18, color: RGB(0x000000), alpha: 0.6))
+        case .iosTinted:
+            // The system tints by luminance: white parts take the full tint, the collars less.
+            Style(bar: RGB(0xFFFFFF), collar: RGB(0xBBBBBB), plate: .solid(RGB(0xFFFFFF)), shadow: nil)
+        }
+    }
+
+    static func draw(_ appearance: Appearance, in context: CGContext, side: CGFloat) {
+        let scale = side / canvas
+        context.saveGState()
+        context.translateBy(x: 0, y: side)
+        context.scaleBy(x: scale, y: -scale)
+        let full = CGRect(x: 0, y: 0, width: canvas, height: canvas)
+
+        switch appearance {
+        case .iosDefault, .watch:
+            context.saveGState()
+            context.clip(to: full)
+            context.drawLinearGradient(
+                gradient(orangeBackground), start: .zero, end: CGPoint(x: canvas, y: canvas),
+                options: [.drawsBeforeStartLocation, .drawsAfterEndLocation]
+            )
+            context.restoreGState()
+        case .iosDark:
+            context.saveGState()
+            context.clip(to: full)
+            context.drawRadialGradient(
+                gradient(darkBackground), startCenter: darkBackgroundCenter, startRadius: 0,
+                endCenter: darkBackgroundCenter, endRadius: darkBackgroundRadius, options: [.drawsAfterEndLocation]
+            )
+            let middle = CGPoint(x: canvas / 2, y: canvas / 2)
+            context.drawRadialGradient(
+                gradient(glow), startCenter: middle, startRadius: 0, endCenter: middle, endRadius: glowRadius, options: []
+            )
+            context.restoreGState()
+        case .iosTinted:
+            context.setFillColor(tintedBackground.cgColor())
+            context.fill(full)
+        }
+
+        let style = style(for: appearance)
+        context.saveGState()
+        if let shadow = style.shadow {
+            // Shadow offset and blur are in device pixels (y up), not in the flipped design space.
+            // A blur of twice the standard deviation matches an SVG/CSS drop shadow of that deviation.
+            context.setShadow(
+                offset: CGSize(width: 0, height: -shadow.offset * scale), blur: 2 * shadow.deviation * scale,
+                color: shadow.color.cgColor(alpha: shadow.alpha)
+            )
+        }
+        // One layer, so the bar and plates cast a single shadow instead of overlapping ones.
+        context.beginTransparencyLayer(auxiliaryInfo: nil)
+        context.translateBy(x: canvas / 2, y: canvas / 2)
+        context.scaleBy(x: markScale, y: markScale)
+        context.translateBy(x: -markCenter.x, y: -markCenter.y)
+        drawMark(style, in: context)
+        context.endTransparencyLayer()
+        context.restoreGState()
+
+        context.restoreGState()
+    }
+
+    private static func drawMark(_ style: Style, in context: CGContext) {
+        let bar = CGMutablePath()
+        bar.addLines(between: barLine)
+        context.addPath(bar)
+        context.setStrokeColor(style.bar.cgColor())
+        context.setLineWidth(barWidth)
+        context.setLineCap(.round)
+        context.setLineJoin(.round)
+        context.strokePath()
+
+        for side in collars.indices {
+            fill(collars[side], radius: collarRadius, with: .solid(style.collar), in: context)
+            fill(innerPlates[side], radius: plateRadius, with: style.plate, in: context)
+            fill(outerPlates[side], radius: plateRadius, with: style.plate, in: context)
+        }
+    }
+
+    private static func fill(_ rect: CGRect, radius: CGFloat, with paint: Paint, in context: CGContext) {
+        let shape = CGPath(roundedRect: rect, cornerWidth: radius, cornerHeight: radius, transform: nil)
+        switch paint {
+        case .solid(let color):
+            context.addPath(shape)
+            context.setFillColor(color.cgColor())
+            context.fillPath()
+        case .linear(let stops, let end):
+            context.saveGState()
+            context.addPath(shape)
+            context.clip()
+            // Map the unit square onto the bounding box, as SVG's objectBoundingBox gradients do.
+            context.translateBy(x: rect.minX, y: rect.minY)
+            context.scaleBy(x: rect.width, y: rect.height)
+            context.drawLinearGradient(
+                gradient(stops), start: .zero, end: end, options: [.drawsBeforeStartLocation, .drawsAfterEndLocation]
+            )
+            context.restoreGState()
+        }
+    }
+
+    private static func gradient(_ stops: [Stop]) -> CGGradient {
+        let colors = stops.map { $0.color.cgColor(alpha: $0.alpha) } as CFArray
+        guard let gradient = CGGradient(colorsSpace: sRGB, colors: colors, locations: stops.map(\.location)) else {
+            fail("could not create a gradient")
+        }
+        return gradient
+    }
+}
+
 // MARK: - Rendering
 
 enum Appearance: String, CaseIterable {
     case iosDefault, iosDark, iosTinted, watch
-
-    var isOpaque: Bool { self != .iosDark }
 }
 
 func fail(_ message: String) -> Never {
@@ -149,28 +377,8 @@ func image(of context: CGContext) -> CGImage {
 
 /// Renders one icon PNG's pixels at `size`.
 func renderIcon(_ variant: Variant, _ appearance: Appearance, size: Int = 1024) -> CGImage {
-    let context = makeContext(width: size, height: size, opaque: appearance.isOpaque)
-    let side = CGFloat(size)
-    let full = CGRect(x: 0, y: 0, width: side, height: side)
-    let markColor: CGColor
-    switch appearance {
-    case .iosDefault, .watch:
-        context.setFillColor(iconBackground.cgColor())
-        context.fill(full)
-        markColor = accent.cgColor()
-    case .iosDark:
-        context.clear(full)
-        markColor = accent.cgColor()
-    case .iosTinted:
-        context.setFillColor(tintedBackground.cgColor())
-        context.fill(full)
-        markColor = tintedMark.cgColor()
-    }
-    context.saveGState()
-    context.translateBy(x: side / 2, y: side / 2)
-    context.scaleBy(x: side, y: side)
-    variant.draw(in: context, color: markColor)
-    context.restoreGState()
+    let context = makeContext(width: size, height: size, opaque: variant.isOpaque(appearance))
+    variant.render(appearance, in: context, side: CGFloat(size))
     return image(of: context)
 }
 
@@ -402,7 +610,8 @@ func writeContactSheet(selected: Variant, to directory: URL) {
     sheet.text("Wholeset app icon candidates", x: margin, top: margin, size: 40, color: ink, bold: true)
     sheet.text(
         "Each variant at 1024 (iOS mask) and at 180, 120, 60 and 40 px, on light and dark. iOS outline approximated (superellipse); "
-            + "dark and tinted shown over a flat stand-in for the system backdrop, tinted with an example blue; watchOS masked to a circle.",
+            + "transparent dark icons and tinted shown over a flat stand-in for the system backdrop, tinted with an example blue; "
+            + "watchOS masked to a circle.",
         x: margin, top: margin + 56, size: 20, color: muted
     )
 
@@ -450,7 +659,7 @@ func writeContactSheet(selected: Variant, to directory: URL) {
     } catch {
         fail("could not create \(directory.path): \(error.localizedDescription)")
     }
-    let output = directory.appending(path: "icon-preview.png")
+    let output = directory.appending(path: "icon-preview-\(selected.rawValue).png")
     writePNG(image(of: sheet.context), to: output)
     print("Wrote the contact sheet to \(output.path)")
 }

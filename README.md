@@ -2,7 +2,7 @@
 
 A workout tracker for Apple Watch and iPhone. Log every set from your wrist, sync workouts to Apple Fitness, and keep your full history with no limits.
 
-**Status:** early development. The Watch app runs a workout, logs sets, times rests and saves the workout to Apple Health. The iPhone app plans (routines, a weekly plan, an exercise library and settings, all synced to the Watch through iCloud), shows your history with records and charts, and imports workouts exported from Strong, Hevy, FitNotes and other apps.
+**Status:** version 1.0, getting ready for its first TestFlight build. The Watch app runs a workout, logs sets, times rests and saves the workout to Apple Health. The iPhone app plans (routines, a weekly plan, an exercise library and settings, all synced to the Watch through iCloud), shows your history with records and charts, and imports workouts exported from Strong, Hevy, FitNotes and other apps.
 
 ## What it is
 
@@ -11,6 +11,7 @@ A workout tracker for Apple Watch and iPhone. Log every set from your wrist, syn
 - Workouts are saved to Apple Health so they count toward your Activity rings.
 - Data syncs between your devices through your own iCloud account (CloudKit private database). No accounts, no servers.
 - Built with Apple frameworks only: SwiftUI, SwiftData, CloudKit, HealthKit, Swift Charts.
+- No tracking, no analytics, nothing sent to the developer. See the [privacy policy](PRIVACY.md).
 
 ## Requirements
 
@@ -25,7 +26,7 @@ A workout tracker for Apple Watch and iPhone. Log every set from your wrist, syn
 | `WholesetWatch/` | watchOS app target (embedded in the iOS app, also runs on its own) |
 | `WholesetKit/` | Swift package with the shared code: versioned SwiftData models and migrations, store setup, sync maintenance and status, the exercise library, the planning and workout logic, and the CSV import (readers, exercise matching, writing) |
 | `Config/` | Build settings as `.xcconfig` files |
-| `Scripts/` | `curate-exercise-library.py`, which builds the bundled exercise library |
+| `Scripts/` | `curate-exercise-library.py` builds the bundled exercise library; `make-app-icon.swift` draws the app icons; `archive.sh` and `ExportOptions.plist` archive and export a release build |
 
 The Xcode project uses folder-synchronized groups, so adding a file to one of the target folders adds it to that target without editing the project file.
 
@@ -74,6 +75,31 @@ Import tests use synthetic files in `WholesetKit/Tests/WholesetKitTests/Fixtures
 ```sh
 cd WholesetKit && env WHOLESET_IMPORT_SAMPLES_DIR=/path/to/exports swift test --filter ImportSampleFilesTests
 ```
+
+## Releasing
+
+**Version and build.** `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` live in `Config/Base.xcconfig` and are shared by both apps, so the Watch app always carries the iPhone app's version. Raise `MARKETING_VERSION` there for a new release; the build number is set per build.
+
+**Archive and export.** With `Config/Local.xcconfig` in place:
+
+```sh
+Scripts/archive.sh                # build number from the date and time, e.g. 202611191530
+Scripts/archive.sh 42             # explicit build number
+Scripts/archive.sh --unsigned     # unsigned archive only, to check that it builds
+```
+
+The script archives the `Wholeset` scheme (the iPhone app with the Watch app inside) to `build/Wholeset.xcarchive` with automatic signing, then exports it for App Store Connect to `build/export` using `Scripts/ExportOptions.plist`. Upload the exported app with Xcode's Organizer or Transporter. Both apps declare that they use no non-exempt encryption (`ITSAppUsesNonExemptEncryption`), and each app bundle carries a privacy manifest (`PrivacyInfo.xcprivacy`).
+
+**App icon.** The icons are classic PNG icon sets drawn by a script (CoreGraphics only):
+
+```sh
+swift Scripts/make-app-icon.swift               # default variant into both asset catalogs
+swift Scripts/make-app-icon.swift barbell       # another variant: w (default), dots, barbell
+swift Scripts/make-app-icon.swift path/to/dir/  # contact sheet of all variants, catalogs untouched
+swift Scripts/make-app-icon.swift --list        # the variants
+```
+
+It writes the iPhone icon (default, dark and tinted) and the Watch icon, all 1024 × 1024. The same input always gives the same files.
 
 ## License
 

@@ -21,6 +21,8 @@ ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor
 GENERATE_INFOPLIST_FILE = YES
 INFOPLIST_FILE = WholesetWatch/Info.plist
 INFOPLIST_KEY_CFBundleDisplayName = Wholeset
+// Only the operating system's own encryption (HTTPS, CloudKit), which is exempt.
+INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO
 INFOPLIST_KEY_WKCompanionAppBundleIdentifier = app.wholeset
 INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = YES
 INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown

@@ -54,6 +54,8 @@ To look at a screen without setting up data, launch either app with `-WholesetDe
 It then opens straight into that screen with an in-memory store and sample data (on the Watch also a fake HealthKit manager).
 Add `-WholesetDemoUnit lb` for pounds. Release builds do not contain this code.
 
+Before a release, launch the iPhone app on a device signed into iCloud with `-WholesetInitCloudKitSchema` to create every record type and field in the CloudKit development schema (it uses a throwaway store, never the app's data), then deploy the schema to production.
+
 - Watch: `home`, `home-syncing`, `countdown`, `exercise`, `exercise-selected`, `exercise-logged`, `done`, `done-long`, `rest`, `menu`, `stats`,
   `end-confirm`, `summary`, `restored`, `restored-nohealth`.
 - iPhone: `welcome`, `units`, `health`, `plan`, `plan-empty`, `routine-editor`, `exercise-picker`, `exercises`, `exercise-detail`, `settings`,

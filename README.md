@@ -86,7 +86,13 @@ Details are in the [privacy policy](PRIVACY.md).
 
 ## Why Wholeset
 
-I only take my Apple Watch to the gym, and I wanted an app that lets me run the whole workout from my wrist. It should still save the workout to Fitness, and it shouldn't cap my routines or hide my history behind a subscription. I couldn't find one that did all of that, so I built it and made it open source.
+Most workout trackers are built for the phone, and their Watch apps are an afterthought: they mirror the phone, need it nearby, or leave out half the features. Others cap routines on the free tier or keep your history behind a subscription. Wholeset starts from the Watch: you run the whole workout from your wrist, it still lands in Apple Fitness, and your routines and history have no limits.
+
+- **Watch first.** The whole workout runs on your wrist, with or without your iPhone.
+- **No limits.** As many routines, exercises and workouts as you want, with your full history.
+- **Your data stays yours.** It lives on your devices and in your own iCloud. There are no accounts or servers.
+- **Native.** Built only with Apple's frameworks, so it looks and behaves like the rest of watchOS and iOS.
+- **Open source.** Anyone can read the code, check the privacy claims, and build it themselves.
 
 ## Built with
 

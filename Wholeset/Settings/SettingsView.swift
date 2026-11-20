@@ -6,7 +6,8 @@ import UIKit
 import WholesetKit
 
 /// The Settings tab: units, default rest, progression steps, importing from another app,
-/// the Watch's Crown speed, and the status of Apple Health and iCloud sync.
+/// the Watch's Crown speed, the status of Apple Health and iCloud sync, and the app's
+/// version with a way to report a problem.
 struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(AppModel.self) private var model
@@ -108,18 +109,16 @@ private struct SettingsForm: View {
                 }
             }
 
-            Section("About") {
-                LabeledContent("Version", value: Self.version)
+            Section {
+                LabeledContent("Version", value: "\(AppInfo.version) (\(AppInfo.build))")
                 LabeledContent("License", value: "GPL-3.0")
+                ReportProblemRow()
+            } header: {
+                Text("About")
+            } footer: {
+                Text("Report a Problem writes an email to the developer with your app version and device model filled in. You can change anything before sending, and nothing is sent unless you send it.")
             }
         }
-    }
-
-    private static var version: String {
-        let info = Bundle.main.infoDictionary
-        let short = info?["CFBundleShortVersionString"] as? String ?? "–"
-        let build = info?["CFBundleVersion"] as? String ?? "–"
-        return "\(short) (\(build))"
     }
 
     /// A binding that writes through a `SettingsEditing` function and saves.

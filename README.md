@@ -2,7 +2,7 @@
 
 A workout tracker for Apple Watch and iPhone. Log every set from your wrist, sync workouts to Apple Fitness, and keep your full history with no limits.
 
-**Status:** version 1.0, getting ready for its first TestFlight build. The Watch app runs a workout, logs sets, times rests and saves the workout to Apple Health. The iPhone app plans (routines, a weekly plan, an exercise library and settings, all synced to the Watch through iCloud), shows your history with records and charts, and imports workouts exported from Strong, Hevy, FitNotes and other apps.
+**Status:** [on the App Store](https://apps.apple.com/app/id6836587554). The Watch app runs a workout, logs sets, times rests and saves the workout to Apple Health. The iPhone app plans (routines, a weekly plan, an exercise library and settings, all synced to the Watch through iCloud), shows your history with records and charts, and imports workouts exported from Strong, Hevy, FitNotes and other apps.
 
 ## What it is
 
@@ -11,7 +11,7 @@ A workout tracker for Apple Watch and iPhone. Log every set from your wrist, syn
 - Workouts are saved to Apple Health so they count toward your Activity rings.
 - Data syncs between your devices through your own iCloud account (CloudKit private database). No accounts, no servers.
 - Built with Apple frameworks only: SwiftUI, SwiftData, CloudKit, HealthKit, Swift Charts.
-- No tracking, no analytics, nothing sent to the developer. See the [privacy policy](PRIVACY.md).
+- No tracking, no analytics, nothing sent to the developer unless you email a problem report. See the [privacy policy](PRIVACY.md).
 
 ## Requirements
 
@@ -102,6 +102,12 @@ swift Scripts/make-app-icon.swift --list        # the variants
 ```
 
 It writes the iPhone icon (default, dark and tinted) and the Watch icon, all 1024 × 1024. The same input always gives the same files.
+
+## Reporting a problem
+
+- In the iPhone app, open Settings > Report a Problem. It starts an email with the app version and device model filled in; nothing is sent until you send it.
+- Or email 0sahil.dev@gmail.com.
+- Or open an issue in this repository.
 
 ## License
 

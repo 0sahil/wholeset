@@ -18,6 +18,16 @@ import WholesetKit
 /// The Crown profile (speed and detents per step) and the weight scale are taken when a tile
 /// is selected and kept until it is released, so settings arriving from iCloud mid-edit
 /// never change a turn in progress.
+///
+/// The page's single Crown view serves exercise navigation and both tiles. Its system
+/// rotation would carry over from one to the next and be reported, clamped into the new
+/// range, as if the user had turned. So each Crown context (a selection, or navigation
+/// after a release) gets a new ``crownContext``, which the page uses as the Crown view's
+/// identity so it starts from the new value. As a backup, a first report so far from where
+/// the context stands that it can only be stale (``CrownReportGate``) changes nothing and
+/// gives the Crown view a fresh identity. A fast first turn is nowhere near that far, so it
+/// moves the value at once, and the gate rejects at most one report per turn, so a real
+/// turn can never be swallowed again and again.
 @Observable
 final class TileEditor {
     /// The selected tile, if any.
@@ -26,6 +36,10 @@ final class TileEditor {
     private(set) var edit: CrownEdit?
     /// How the Crown edits the selected tile.
     private(set) var profile: CrownProfile?
+    /// Changes whenever the Crown starts a new context: a tile selected, the tile released
+    /// back to exercise navigation, or a rejected stale report. The identity of the page's
+    /// Crown view.
+    private(set) var crownContext = 0
 
     @ObservationIgnored private let controller: WorkoutController
     /// The set the edit belongs to; an edit is never written to any other set.
@@ -34,6 +48,8 @@ final class TileEditor {
     @ObservationIgnored private var scale: WeightScale?
     @ObservationIgnored private var saveTask: Task<Void, Never>?
     @ObservationIgnored private var releaseTask: Task<Void, Never>?
+    /// Guards the first report of each exercise navigation turn.
+    @ObservationIgnored private var navigationGate = CrownReportGate()
 
     /// Quiet time after the last detent before the edit is saved.
     static let saveDelay: Duration = .milliseconds(500)
@@ -74,6 +90,7 @@ final class TileEditor {
         self.profile = profile
         self.scale = scale
         setID = set.id
+        restartCrown()
         controller.tileEditingChanged(isEditing: true)
         restartReleaseTimer()
     }
@@ -94,19 +111,27 @@ final class TileEditor {
         scale = nil
         setID = nil
         if wasEditing {
+            restartCrown()
             controller.tileEditingChanged(isEditing: false)
         }
     }
 
     // MARK: Crown
 
-    /// The Crown reported detent `position` for the selected tile.
+    /// The Crown reported detent `position` for the selected tile. A stale report changes
+    /// nothing and gives the Crown view a fresh identity at the edit's position.
     func crownMoved(to position: Int) {
         guard var edit else { return }
+        let isStale = edit.isStaleReport(position)
+        // Always through the edit, so its gate records the rejection and admits the next report.
         let changed = edit.crownMoved(to: position)
         // Part of a step still moves the position, which the Crown binding reads back.
         guard edit != self.edit else { return }
         self.edit = edit
+        guard !isStale else {
+            refreshCrownView()
+            return
+        }
         guard changed else { return }
         if profile?.usesSystemHaptics == false {
             Haptics.play(.click)
@@ -115,8 +140,21 @@ final class TileEditor {
         restartReleaseTimer()
     }
 
-    /// The Crown stopped turning: give the next turn room both ways.
+    /// Whether the Crown's report of exercise `index` (no tile selected) is a turn from
+    /// `current`. A stale report is refused once and gives the Crown view a fresh identity
+    /// at `current`.
+    func admitsNavigation(to index: Int, from current: Int) -> Bool {
+        guard navigationGate.admit(index, at: current) else {
+            refreshCrownView()
+            return false
+        }
+        return true
+    }
+
+    /// The Crown stopped turning: give the next turn room both ways. The next turn, of a
+    /// tile or between exercises, must start where it stands.
     func crownIdle() {
+        navigationGate.close()
         guard var edit else { return }
         edit.recentre()
         guard edit != self.edit else { return }
@@ -157,6 +195,18 @@ final class TileEditor {
         controller.commitEdits()
         edit.markSaved()
         self.edit = edit
+    }
+
+    /// Starts a new Crown context: a fresh Crown view whose first report is checked again.
+    private func restartCrown() {
+        refreshCrownView()
+        navigationGate.close()
+    }
+
+    /// Gives the Crown view a fresh identity without re-arming any gate, so after a stale
+    /// report the next report is admitted whatever it is.
+    private func refreshCrownView() {
+        crownContext &+= 1
     }
 
     private func write(_ value: Int, to tile: ValueTile, scale: WeightScale) {
@@ -204,7 +254,7 @@ final class TileEditor {
             )
         case .reps:
             return CrownEdit(
-                value: values.reps ?? entry.repLow ?? 0,
+                value: CrownEdit.repsStart(shown: values.reps, repFloor: entry.repLow),
                 isStored: values.reps != nil,
                 bounds: 0...Self.maxReps,
                 span: Self.crownSpan,

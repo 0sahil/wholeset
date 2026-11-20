@@ -101,32 +101,56 @@ extension View {
     }
 }
 
+/// The identity of the page's Crown view. A new identity gives a fresh system Crown
+/// rotation, starting from the binding's value, so nothing turned in one context is reported
+/// into the next.
+struct CrownContextID: Hashable {
+    /// The tile editor's Crown context: changes on every selection and release.
+    let context: Int
+    /// Exercise navigation's range, so adding or removing an exercise starts afresh too;
+    /// `nil` while a tile is selected, whose range moves between turns by design.
+    let navigationRange: ClosedRange<Int>?
+}
+
 /// The exercise page's own Crown: edits the selected tile, or moves between exercises.
 /// Applied to the set page and the static done page only. The scrolling done page has no
 /// such ancestor, so nothing competes with its ScrollView for the Crown.
+///
+/// The Crown lives on an invisible layer behind the page, identified by ``context``, so a
+/// new Crown context replaces only that layer (which takes focus back from its own `task`),
+/// never the page's content or the VoiceOver cursor.
 struct PageCrown: ViewModifier {
     let binding: Binding<Int>
     let range: ClosedRange<Int>
     let profile: CrownProfile
     let onIdle: () -> Void
     let focus: CrownFocus
+    let context: CrownContextID
+    /// Hides the system's Crown indicator: it shows the Crown window, not the edited value.
+    let hidesIndicator: Bool
 
     func body(content: Content) -> some View {
         content
-            .focusable(focus.isPageShowing)
-            .claimsCrown(.page, with: focus)
-            .focusEffectDisabled()
-            .digitalCrownRotation(
-                detent: binding,
-                from: range.lowerBound,
-                through: range.upperBound,
-                by: 1,
-                sensitivity: DigitalCrownRotationalSensitivity(profile.rate),
-                isContinuous: false,
-                // With several detents per step the tile editor plays one click per step instead.
-                isHapticFeedbackEnabled: profile.usesSystemHaptics,
-                onIdle: onIdle
-            )
+            .background {
+                Color.clear
+                    .focusable(focus.isPageShowing)
+                    .claimsCrown(.page, with: focus)
+                    .focusEffectDisabled()
+                    .digitalCrownRotation(
+                        detent: binding,
+                        from: range.lowerBound,
+                        through: range.upperBound,
+                        by: 1,
+                        sensitivity: DigitalCrownRotationalSensitivity(profile.rate),
+                        isContinuous: false,
+                        // With several detents per step the tile editor plays one click per step instead.
+                        isHapticFeedbackEnabled: profile.usesSystemHaptics,
+                        onIdle: onIdle
+                    )
+                    .scrollIndicators(hidesIndicator ? .hidden : .automatic)
+                    .accessibilityHidden(true)
+                    .id(context)
+            }
     }
 }
 
@@ -266,10 +290,11 @@ private struct ExerciseTab: View {
     /// With a tile selected the Crown's detent is the edit's position (its value, at one
     /// detent per step), in a range that only moves while the Crown is idle (see `CrownEdit`).
     /// Speed and detents per step come from the synced Crown sensitivity, taken when the tile
-    /// was selected. With no tile selected the Crown picks the exercise.
+    /// was selected. With no tile selected the Crown picks the exercise. Every switch between
+    /// these gives the Crown a fresh identity (see `TileEditor`).
     private func pageCrown(engine: WorkoutEngine, focus: CrownFocus) -> PageCrown {
+        let editor = editor
         if let edit = editor.edit, let profile = editor.profile {
-            let editor = editor
             return PageCrown(
                 binding: Binding(
                     get: { editor.edit?.position ?? edit.position },
@@ -278,22 +303,28 @@ private struct ExerciseTab: View {
                 range: edit.crownRange,
                 profile: profile,
                 onIdle: editor.crownIdle,
-                focus: focus
+                focus: focus,
+                context: CrownContextID(context: editor.crownContext, navigationRange: nil),
+                hidesIndicator: true
             )
         }
+        // Never an empty range; extra detents past the last exercise are clamped by the engine.
+        let range = 0...max(1, engine.entries.count - 1)
         return PageCrown(
             binding: Binding(
                 get: { engine.currentIndex },
                 set: { newValue in
-                    guard newValue != engine.currentIndex else { return }
+                    let current = engine.currentIndex
+                    guard editor.admitsNavigation(to: newValue, from: current), newValue != current else { return }
                     controller.selectEntry(at: newValue)
                 }
             ),
-            // Never an empty range; extra detents past the last exercise are clamped by the engine.
-            range: 0...max(1, engine.entries.count - 1),
+            range: range,
             profile: .exerciseNavigation,
             onIdle: editor.crownIdle,
-            focus: focus
+            focus: focus,
+            context: CrownContextID(context: editor.crownContext, navigationRange: range),
+            hidesIndicator: false
         )
     }
 

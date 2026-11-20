@@ -82,7 +82,7 @@ struct CrownInputTests {
 
     @Test func crownPositionsOutsideTheWindowAreClamped() {
         var edit = weightEdit(at: 120)
-        edit.crownMoved(to: 400)
+        edit.turn(to: 400)
         #expect(edit.value == 170)
         let pastTheEdge = edit.crownMoved(to: 171)
         #expect(!pastTheEdge)
@@ -99,7 +99,7 @@ struct CrownInputTests {
 
     @Test func recentreMovesOnlyTheRange() {
         var edit = weightEdit(at: 120)
-        edit.crownMoved(to: 170)
+        edit.turn(to: 170)
         edit.recentre()
         #expect(edit.value == 170)
         #expect(edit.crownRange == 120...220)
@@ -138,10 +138,10 @@ struct CrownInputTests {
     @Test func narrowBoundsNeverMoveTheRange() {
         var reps = CrownEdit(value: 8, isStored: true, bounds: 0...100, span: 100)
         #expect(reps.crownRange == 0...100)
-        reps.crownMoved(to: 95)
+        reps.turn(to: 95)
         reps.recentre()
         #expect(reps.crownRange == 0...100)
-        reps.crownMoved(to: 101)
+        reps.turn(to: 101)
         #expect(reps.value == 100)
     }
 
@@ -159,7 +159,7 @@ struct CrownInputTests {
 
     @Test func movingBackToTheSavedValueNeedsNoSave() {
         var edit = weightEdit(at: 120)
-        edit.crownMoved(to: 125)
+        edit.turn(to: 125)
         edit.crownMoved(to: 120)
         #expect(edit.hasMoved)
         #expect(!edit.hasUnsavedChange)
@@ -167,7 +167,7 @@ struct CrownInputTests {
 
     @Test func markSavedClearsTheUnsavedChange() {
         var edit = weightEdit(at: 120)
-        edit.crownMoved(to: 130)
+        edit.turn(to: 130)
         edit.markSaved()
         #expect(edit.savedValue == 130)
         #expect(!edit.hasUnsavedChange)
@@ -177,7 +177,7 @@ struct CrownInputTests {
 
     @Test func voiceOverStepsMoveOneStepAndCarryTheWindow() {
         var edit = weightEdit(at: 120)
-        edit.crownMoved(to: 170)
+        edit.turn(to: 170)
         let up = edit.step(by: 1)
         #expect(up)
         #expect(edit.value == 171)

@@ -1,6 +1,6 @@
 # Wholeset privacy policy
 
-Wholeset is a workout tracker for Apple Watch and iPhone. It has no accounts and no servers, and the developer receives none of your data.
+Wholeset is a workout tracker for Apple Watch and iPhone. It has no accounts and no servers, and the developer receives none of your data unless you choose to email a problem report.
 
 ## What Wholeset stores, and where
 
@@ -13,10 +13,14 @@ Wholeset is a workout tracker for Apple Watch and iPhone. It has no accounts and
 - **Heart rate and active energy** from Apple Health, during a workout on Apple Watch, to show them live and in the workout summary. You can allow or deny this in the Health permissions; logging sets works either way.
 - **CSV files you choose.** When you import workouts exported from another app, Wholeset reads only the file you pick or open in it, on your iPhone. The file is not uploaded anywhere.
 
+## Problem reports you choose to send
+
+In the iPhone app, Settings > Report a Problem opens an email to the developer in your mail app. It is prefilled with the app's version and build, your iPhone's model and iOS version, and empty lines for you to describe the problem. You can change or remove anything before sending, and nothing is sent unless you send it yourself. The email and everything in it go only to the developer's inbox and are used only to respond to your report.
+
 ## What Wholeset does not do
 
 - No tracking, no advertising, no analytics, no crash-reporting services, no third-party code.
-- Nothing is sent to the developer or to anyone else. Wholeset makes no network connections of its own; the only data that leaves your devices is what Apple's iCloud sync and Apple Health handle for you.
+- Nothing is sent to the developer or to anyone else automatically. Wholeset makes no network connections of its own; the only data that leaves your devices is what Apple's iCloud sync and Apple Health handle for you, and any problem report you send from your mail app.
 
 ## Deleting your data
 
@@ -30,4 +34,7 @@ Changes to this policy are made in this file, so its history in the repository s
 
 ## Contact
 
-Questions or concerns: open an issue in this project's GitHub repository.
+Questions or concerns:
+
+- In the iPhone app, Settings > Report a Problem, or email 0sahil.dev@gmail.com.
+- Open an issue in this project's GitHub repository.

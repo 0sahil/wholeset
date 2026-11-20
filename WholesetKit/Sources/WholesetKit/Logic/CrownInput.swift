@@ -34,6 +34,73 @@ public struct CrownWindow: Sendable, Equatable {
     }
 }
 
+/// Tells a real Crown turn from a stale report at the start of a Crown context.
+///
+/// A Crown view can keep its own rotation from before its binding and range were switched to
+/// another value, and report that old position (clamped into the new range) before the user
+/// has turned at all. Giving the Crown view a fresh identity for each context prevents that;
+/// this gate is only a backup for when it does not. A stale reading is typically tens of
+/// detents from where the context stands, while a real turn starts where it stands, so a
+/// first report at least ``staleDistance`` detents away is taken as stale and anything
+/// nearer, however fast the turn, is admitted.
+///
+/// The gate is closed when a context starts. While closed it admits every report nearer
+/// than ``staleDistance``, and the first one that moves opens it. A stale report also opens
+/// it, so the gate rejects at most one report between two calls to ``close()``: if the
+/// Crown view were not started afresh after a rejection, its next reports would follow on
+/// from the stale reading, and a gate that kept rejecting them would swallow every real
+/// turn. Once open it admits every report until it is closed again.
+public struct CrownReportGate: Sendable, Equatable {
+    /// The default for ``staleDistance``: 20 detents.
+    ///
+    /// The Crown reports its detents as they pass, so even a hard flick at the fastest rate
+    /// reaches only a few detents before its first report; 20 leaves a wide margin for that.
+    /// A stale reading comes from another context and is clamped into this one's range,
+    /// whose 100-detent window is centred on the start, so it usually lands about 50 detents
+    /// away or more (the bug this guards against reported 100 against a start of 0 to 10).
+    /// A stale reading nearer than this is not caught; the fresh Crown view handles those.
+    public static let defaultStaleDistance = 20
+
+    /// How many detents from where the context stands a first report must be to count as
+    /// stale (at least 2, so a single detent is always a turn).
+    public let staleDistance: Int
+    /// Whether the gate admits every report: a turn has started, or a stale report was
+    /// already rejected, since the gate was last closed.
+    public private(set) var isOpen = false
+
+    /// Creates a closed gate. A `staleDistance` below 2 is treated as 2.
+    public init(staleDistance: Int = CrownReportGate.defaultStaleDistance) {
+        self.staleDistance = max(2, staleDistance)
+    }
+
+    /// Whether `report` is stale: the gate is closed and `report` is at least
+    /// ``staleDistance`` detents from `position`, where the context stands.
+    public func isStale(_ report: Int, at position: Int) -> Bool {
+        guard !isOpen else { return false }
+        let (distance, overflow) = report.subtractingReportingOverflow(position)
+        return overflow || distance.magnitude >= UInt(staleDistance)
+    }
+
+    /// Admits `report` unless it is stale (see ``isStale(_:at:)``). A report that moves away
+    /// from `position` opens the gate, and so does a rejected one, so at most one report is
+    /// rejected per context.
+    ///
+    /// - Returns: Whether `report` should be applied.
+    public mutating func admit(_ report: Int, at position: Int) -> Bool {
+        if isStale(report, at: position) {
+            isOpen = true
+            return false
+        }
+        if report != position { isOpen = true }
+        return true
+    }
+
+    /// Starts a new context: the next report is checked again.
+    public mutating func close() {
+        isOpen = false
+    }
+}
+
 /// A Digital Crown edit of one whole-number value (weight steps or reps), held in memory
 /// and written to the store only when ``hasUnsavedChange`` says so.
 ///
@@ -48,7 +115,23 @@ public struct CrownWindow: Sendable, Equatable {
 /// the Crown is idle (``recentre()``) or after a VoiceOver step, never during a turn. A
 /// turn can therefore never see its range change under it; a single turn reaches at most
 /// half a window from where it started, and the next turn continues from there.
+///
+/// The first report of a turn applies at once, even when a fast turn has already passed
+/// several detents, unless it is so far from where the edit stands that it can only be a
+/// stale reading (see ``CrownReportGate``); that one report never changes the value. The
+/// edit's gate starts closed, and ``recentre()`` closes it again between turns.
 public struct CrownEdit: Sendable, Equatable {
+    /// Where a reps edit starts when the set has no reps to show and the exercise has no rep
+    /// floor. The tile keeps its placeholder until the Crown moves, so the first detent
+    /// shows one more or one less than this.
+    public static let blankRepsStart = 10
+
+    /// The value a reps edit starts from: the reps the set shows, else the exercise's rep
+    /// floor, else ``blankRepsStart``.
+    public static func repsStart(shown: Int?, repFloor: Int?) -> Int {
+        shown ?? repFloor ?? blankRepsStart
+    }
+
     /// The window of values the Crown can reach around the anchor; its bounds are every
     /// value the edit can take.
     public let window: CrownWindow
@@ -66,6 +149,8 @@ public struct CrownEdit: Sendable, Equatable {
     public private(set) var anchor: Int
     /// Whether the user has changed the value since the edit began.
     public private(set) var hasMoved = false
+    /// Rejects the first report of a turn when it is a stale reading far from ``position``.
+    public private(set) var gate: CrownReportGate
 
     /// Starts an edit.
     ///
@@ -87,6 +172,9 @@ public struct CrownEdit: Sendable, Equatable {
         self.position = start * detentsPerStep
         self.savedValue = isStored ? start : nil
         self.anchor = start
+        // In detents, whatever the detents per step: a fast first report is measured in
+        // detents passed, and a stale reading is clamped into the same 100-detent window.
+        self.gate = CrownReportGate()
     }
 
     /// The range of detent positions to give the Crown now.
@@ -106,7 +194,15 @@ public struct CrownEdit: Sendable, Equatable {
         savedValue != nil || hasMoved
     }
 
+    /// Whether the Crown reporting `position` now would be stale: the first report of a turn,
+    /// at least ``CrownReportGate/staleDistance`` detents from ``position``.
+    /// ``crownMoved(to:)`` ignores such a report, and admits the next one whatever it is.
+    public func isStaleReport(_ position: Int) -> Bool {
+        gate.isStale(position, at: self.position)
+    }
+
     /// The Crown reported detent `position`. Positions outside ``crownRange`` are clamped.
+    /// A stale report (see ``isStaleReport(_:)``) is ignored.
     ///
     /// The value follows only whole steps: it moves up once the position reaches the next
     /// step's first detent, and down once it reaches the previous step's, so turning back
@@ -115,6 +211,7 @@ public struct CrownEdit: Sendable, Equatable {
     /// - Returns: Whether ``value`` changed.
     @discardableResult
     public mutating func crownMoved(to position: Int) -> Bool {
+        guard gate.admit(position, at: self.position) else { return false }
         let range = crownRange
         let clamped = min(max(position, range.lowerBound), range.upperBound)
         self.position = clamped
@@ -152,10 +249,12 @@ public struct CrownEdit: Sendable, Equatable {
 
     /// Centres the Crown window on ``value`` and drops any part of a step turned so far,
     /// so the next turn has room both ways. Call only while the Crown is idle: it changes
-    /// ``crownRange`` and ``position`` but never ``value``.
+    /// ``crownRange`` and ``position`` but never ``value``. The next turn's first report is
+    /// checked again (see ``isStaleReport(_:)``).
     public mutating func recentre() {
         anchor = value
         position = value * detentsPerStep
+        gate.close()
     }
 
     /// Records that ``value`` has been written to the store.

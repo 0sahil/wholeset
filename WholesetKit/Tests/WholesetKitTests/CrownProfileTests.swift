@@ -67,26 +67,26 @@ struct CrownProfileTests {
     @Test func aFullTurnMovesHalfAsFarAsNormal() {
         var slow = weightEdit()
         var normal = CrownEdit(value: 120, isStored: true, bounds: 0...1000, span: 100)
-        slow.crownMoved(to: slow.position + 40)
-        normal.crownMoved(to: normal.value + 40)
+        slow.turn(to: slow.position + 40)
+        normal.turn(to: normal.value + 40)
         #expect(slow.value - 120 == 20)
         #expect(normal.value - 120 == 40)
     }
 
     @Test func positionsAreClampedToTheWindowAndBounds() {
         var edit = weightEdit()
-        edit.crownMoved(to: 10_000)
+        edit.turn(to: 10_000)
         #expect(edit.position == 290)
         #expect(edit.value == 145)
         var low = CrownEdit(value: 1, isStored: true, bounds: 0...1000, span: 100, detentsPerStep: 2)
-        low.crownMoved(to: -50)
+        low.turn(to: -50)
         #expect(low.value == 0)
         #expect(low.position == 0)
     }
 
     @Test func recentringDropsAHalfStepAndRecentresTheWindow() {
         var edit = weightEdit()
-        edit.crownMoved(to: 262)
+        edit.turn(to: 262)
         edit.crownMoved(to: 263)
         #expect(edit.value == 131)
         edit.recentre()
@@ -124,7 +124,7 @@ struct CrownProfileTests {
             let profile = CrownProfile.weight(sensitivity)
             let start = scale.steps(forKilograms: WeightUnit.lb.kilograms(fromValue: 135))
             var edit = CrownEdit(value: start, isStored: true, bounds: 0...scale.maximumSteps, span: 100, detentsPerStep: profile.detentsPerStep)
-            edit.crownMoved(to: edit.position + 10 * profile.detentsPerStep)
+            edit.turn(to: edit.position + 10 * profile.detentsPerStep)
             let kilograms = scale.kilograms(forSteps: edit.value)
             #expect(scale.displayValue(forKilograms: kilograms) == 145)
             #expect(scale.steps(forKilograms: kilograms) == edit.value)

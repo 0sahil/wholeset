@@ -77,6 +77,17 @@ GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE
 GCC_WARN_UNUSED_FUNCTION = YES
 GCC_WARN_UNUSED_VARIABLE = YES
 
+// App identity. Every identifier derives from BUNDLE_ID_PREFIX: the iPhone app is the
+// prefix itself, the Watch app is <prefix>.watchkitapp, the iCloud container is
+// iCloud.<prefix>. Override it in Local.xcconfig to run on your own devices.
+BUNDLE_ID_PREFIX = app.wholeset
+WHOLESET_ICLOUD_CONTAINER = iCloud.$(BUNDLE_ID_PREFIX)
+
+// iCloud sync (CloudKit and push). NO builds both apps without the iCloud and push
+// entitlements, which a free Apple ID cannot sign, and the apps keep data on the device.
+// YES or NO.
+WHOLESET_ICLOUD = YES
+
 // Per-developer overrides such as DEVELOPMENT_TEAM. Optional and never committed;
-// see Local.xcconfig.example.
+// see Local.xcconfig.example. Must stay last so it can override the settings above.
 #include? "Local.xcconfig"

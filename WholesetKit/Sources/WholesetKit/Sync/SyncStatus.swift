@@ -87,6 +87,9 @@ public struct SyncActivity: Sendable, Equatable {
 public enum SyncStatus: Sendable, Equatable {
     /// The store is not mirrored to CloudKit in this build or launch.
     case off(WholesetStore.Mode)
+    /// The app was built without iCloud (``CloudConfiguration/isICloudEnabled`` is
+    /// `false`), so data stays on the device by design.
+    case offInThisBuild
     /// The iCloud account status is still being checked.
     case checkingAccount
     /// The account cannot sync (signed out, restricted, …).
@@ -106,8 +109,17 @@ public enum SyncStatus: Sendable, Equatable {
     ///   - mode: How the store was opened.
     ///   - account: The account status, `nil` while checking.
     ///   - activity: Mirroring events since launch.
-    public static func summarize(mode: WholesetStore.Mode, account: CloudAccountStatus?, activity: SyncActivity) -> SyncStatus {
-        guard mode == .cloudKit else { return .off(mode) }
+    ///   - iCloudEnabledInBuild: Whether the app was built with iCloud. A build without it
+    ///     that opened its on-disk store reports ``offInThisBuild``.
+    public static func summarize(
+        mode: WholesetStore.Mode,
+        account: CloudAccountStatus?,
+        activity: SyncActivity,
+        iCloudEnabledInBuild: Bool = true
+    ) -> SyncStatus {
+        guard mode == .cloudKit else {
+            return mode == .local && !iCloudEnabledInBuild ? .offInThisBuild : .off(mode)
+        }
         guard let account else { return .checkingAccount }
         guard account == .available else { return .accountUnavailable(account) }
         if activity.isRunning { return .syncing }

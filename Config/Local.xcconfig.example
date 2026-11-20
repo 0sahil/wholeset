@@ -3,3 +3,11 @@
 
 // Your Apple Developer team ID, shown in Xcode > Settings > Accounts.
 DEVELOPMENT_TEAM = YOUR_TEAM_ID
+
+// Needed only to run on your own devices: a reverse-DNS prefix you own. The Watch app
+// and the iCloud container derive from it.
+// BUNDLE_ID_PREFIX = com.yourname.wholeset
+
+// Uncomment to build without iCloud sync, for example with a free Apple ID, which cannot
+// sign the iCloud and push entitlements. Data then stays on each device.
+// WHOLESET_ICLOUD = NO

@@ -70,6 +70,11 @@ struct CloudKitSchemaSetupView: View {
     private func run() async {
         guard !started else { return }
         started = true
+        guard CloudConfiguration.main.isICloudEnabled else {
+            Self.logger.error("WholesetInitCloudKitSchema: failed: iCloud is off in this build")
+            status = .failed("iCloud is off in this build (WHOLESET_ICLOUD = NO).")
+            return
+        }
         Self.logger.notice("WholesetInitCloudKitSchema: started")
         do {
             let report = try await Task.detached(priority: .userInitiated) {

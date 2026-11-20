@@ -7,18 +7,23 @@ import SwiftData
 /// Builds the SwiftData container shared by the iPhone and Watch apps.
 public enum WholesetStore {
     /// The iCloud container both apps sync through (private database).
-    public static let cloudKitContainerIdentifier = "iCloud.app.wholeset"
+    ///
+    /// Read from the app's Info.plist (``CloudConfiguration/main``), so it follows the
+    /// build's bundle ID prefix; ``CloudConfiguration/defaultContainerIdentifier`` where
+    /// the Info.plist names none (package tests, previews).
+    public static var cloudKitContainerIdentifier: String { CloudConfiguration.main.containerIdentifier }
 
     /// File name (without extension) of the on-disk store.
     public static let storeName = "Wholeset"
 
-    /// Whether the apps should try CloudKit: on for device builds, off in the
+    /// Whether the apps should try CloudKit: on for device builds made with iCloud, off
+    /// for builds made without it (``CloudConfiguration/isICloudEnabled``) and in the
     /// simulator, where builds are usually unsigned and lack the iCloud entitlement.
     public static var cloudKitEnabledByDefault: Bool {
         #if targetEnvironment(simulator)
         return false
         #else
-        return true
+        return CloudConfiguration.main.isICloudEnabled
         #endif
     }
 

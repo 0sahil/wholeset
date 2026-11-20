@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and ideas
+    url: https://github.com/0sahil/wholeset/discussions
+    about: Ask how something works or share an idea before it becomes a feature request.
+  - name: Report privately by email
+    url: https://github.com/0sahil/wholeset#reporting-a-problem
+    about: In the iPhone app, Settings > Report a Problem starts an email with your app version and device filled in.
+  - name: Security problem
+    url: https://github.com/0sahil/wholeset/security/advisories/new
+    about: Report security issues privately, not as a public issue.

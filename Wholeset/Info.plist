@@ -17,6 +17,10 @@
 			</array>
 		</dict>
 	</array>
+	<key>WholesetCloudKitContainer</key>
+	<string>$(WHOLESET_ICLOUD_CONTAINER)</string>
+	<key>WholesetICloudEnabled</key>
+	<string>$(WHOLESET_ICLOUD)</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>

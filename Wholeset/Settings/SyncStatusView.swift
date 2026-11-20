@@ -22,11 +22,14 @@ struct SyncStatusView: View {
                 LabeledContent("iCloud Account", value: SyncStatusText.account(sync.account, mode: sync.mode))
                 LabeledContent("Data", value: SyncStatusText.mode(sync.mode))
             }
-            Section {
-                LabeledContent("Last Download", value: SyncStatusText.event(sync.activity.lastImport))
-                LabeledContent("Last Upload", value: SyncStatusText.event(sync.activity.lastExport))
-            } footer: {
-                Text("Shows sync activity since Wholeset was opened. Changes reach your other devices when iCloud delivers them, which can take a few minutes, especially on Apple Watch.")
+            // A build without iCloud never syncs, so there is no activity to show.
+            if sync.status != .offInThisBuild {
+                Section {
+                    LabeledContent("Last Download", value: SyncStatusText.event(sync.activity.lastImport))
+                    LabeledContent("Last Upload", value: SyncStatusText.event(sync.activity.lastExport))
+                } footer: {
+                    Text("Shows sync activity since Wholeset was opened. Changes reach your other devices when iCloud delivers them, which can take a few minutes, especially on Apple Watch.")
+                }
             }
         }
         .navigationTitle("iCloud Sync")
@@ -44,6 +47,7 @@ enum SyncStatusText {
         switch status {
         case .off(.inMemory): String(localized: "Off (temporary data)")
         case .off: String(localized: "Off on this device")
+        case .offInThisBuild: String(localized: "Off in this build")
         case .checkingAccount: String(localized: "Checking…")
         case .accountUnavailable(.noAccount): String(localized: "Not signed in to iCloud")
         case .accountUnavailable(.restricted): String(localized: "iCloud is restricted")
@@ -63,6 +67,8 @@ enum SyncStatusText {
             String(localized: "Wholeset couldn't open its database, so changes are kept only until the app quits.")
         case .off:
             String(localized: "This build keeps data on this device only. Builds installed on a device with iCloud sync data through your iCloud account.")
+        case .offInThisBuild:
+            String(localized: "iCloud sync is off in this build of Wholeset. Your routines and workouts stay on this device and aren't shared with your other devices.")
         case .accountUnavailable(.noAccount):
             String(localized: "Sign in to iCloud in Settings to sync routines and workouts between iPhone and Apple Watch.")
         case .accountUnavailable(.temporarilyUnavailable):

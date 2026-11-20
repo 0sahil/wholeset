@@ -53,6 +53,29 @@ struct SyncTests {
         #expect(SyncStatus.summarize(mode: .inMemory, account: nil, activity: SyncActivity()) == .off(.inMemory))
     }
 
+    @Test func buildsWithoutICloudSayItIsOffByDesign() {
+        #expect(SyncStatus.summarize(mode: .local, account: nil, activity: SyncActivity(), iCloudEnabledInBuild: false) == .offInThisBuild)
+        // A store that could only be opened in memory is the more urgent message.
+        #expect(SyncStatus.summarize(mode: .inMemory, account: nil, activity: SyncActivity(), iCloudEnabledInBuild: false) == .off(.inMemory))
+        #expect(SyncStatus.summarize(mode: .local, account: nil, activity: SyncActivity(), iCloudEnabledInBuild: true) == .off(.local))
+    }
+
+    @MainActor
+    @Test func monitorOfABuildWithoutICloudNeverChecksTheAccount() async {
+        let monitor = SyncMonitor(mode: .local, iCloudEnabledInBuild: false)
+        monitor.start()
+        await monitor.accountRefresh?.value
+        #expect(monitor.account == nil)
+        #expect(monitor.status == .offInThisBuild)
+    }
+
+    @MainActor
+    @Test func monitorDefaultsToTheRunningAppsConfiguration() {
+        // Package tests have no Info.plist keys, so the shipped default (iCloud on) applies.
+        #expect(SyncMonitor(mode: .local).iCloudEnabledInBuild)
+        #expect(SyncMonitor(mode: .local).status == .off(.local))
+    }
+
     @Test func accountProblemsComeFirst() {
         #expect(SyncStatus.summarize(mode: .cloudKit, account: nil, activity: SyncActivity()) == .checkingAccount)
         #expect(SyncStatus.summarize(mode: .cloudKit, account: .noAccount, activity: SyncActivity()) == .accountUnavailable(.noAccount))

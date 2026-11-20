@@ -1,0 +1,66 @@
+name: Bug report
+description: Something in Wholeset doesn't work as it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Please check the [open issues](https://github.com/0sahil/wholeset/issues) first in case it's already known.
+        Don't include personal health data you don't want public; screenshots can be cropped.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. On the Watch, start the Push routine
+        2. Log a set
+        3. ...
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where does it happen?
+      options:
+        - Apple Watch app
+        - iPhone app
+        - Both
+        - Sync between them
+        - Importing from another app
+        - Apple Health / Fitness
+    validations:
+      required: true
+  - type: input
+    id: app-version
+    attributes:
+      label: Wholeset version
+      description: iPhone app > Settings > Version (for example 1.0.1 (202611200618)).
+    validations:
+      required: true
+  - type: input
+    id: iphone
+    attributes:
+      label: iPhone model and iOS version
+      placeholder: iPhone 16, iOS 26.2
+  - type: input
+    id: watch
+    attributes:
+      label: Apple Watch model and watchOS version
+      placeholder: Apple Watch SE (2nd generation), watchOS 26.2
+  - type: dropdown
+    id: unit
+    attributes:
+      label: Weight unit
+      options:
+        - kg
+        - lb
+  - type: textarea
+    id: extra
+    attributes:
+      label: Screenshots or anything else
+      description: Screenshots, a screen recording, or for import problems the app you exported from (please don't attach your full export unless you're happy for it to be public).

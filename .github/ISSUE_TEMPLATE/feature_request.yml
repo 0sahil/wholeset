@@ -1,0 +1,27 @@
+name: Feature request
+description: Suggest something Wholeset should do.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For open-ended ideas or questions, [Discussions](https://github.com/0sahil/wholeset/discussions) may be a better place.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: The problem or situation at the gym, not the solution yet.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would help?
+      description: How you imagine it working, and on which device (Watch, iPhone or both).
+    validations:
+      required: true
+  - type: textarea
+    id: today
+    attributes:
+      label: How do you handle it today?
+      description: A workaround in Wholeset, or how another app does it.

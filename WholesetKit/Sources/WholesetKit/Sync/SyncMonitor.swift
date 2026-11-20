@@ -22,6 +22,8 @@ import os
 public final class SyncMonitor {
     /// How the store was opened.
     public let mode: WholesetStore.Mode
+    /// Whether the app was built with iCloud; see ``CloudConfiguration/isICloudEnabled``.
+    public let iCloudEnabledInBuild: Bool
     /// The iCloud account status; `nil` until checked, and always `nil` without CloudKit.
     public private(set) var account: CloudAccountStatus?
     /// Mirroring events since launch.
@@ -42,10 +44,17 @@ public final class SyncMonitor {
     ///
     /// - Parameters:
     ///   - mode: How the store was opened.
+    ///   - iCloudEnabledInBuild: Whether the app was built with iCloud; defaults to the
+    ///     running app's ``CloudConfiguration/isICloudEnabled``.
     ///   - accountStatusProvider: Reads the account status. `nil` uses CloudKit's for
     ///     ``WholesetStore/cloudKitContainerIdentifier`` when `mode` is `.cloudKit`.
-    public init(mode: WholesetStore.Mode, accountStatusProvider: (@Sendable () async -> CloudAccountStatus?)? = nil) {
+    public init(
+        mode: WholesetStore.Mode,
+        iCloudEnabledInBuild: Bool = CloudConfiguration.main.isICloudEnabled,
+        accountStatusProvider: (@Sendable () async -> CloudAccountStatus?)? = nil
+    ) {
         self.mode = mode
+        self.iCloudEnabledInBuild = iCloudEnabledInBuild
         if let accountStatusProvider {
             self.accountStatusProvider = accountStatusProvider
         } else if mode == .cloudKit {
@@ -57,7 +66,7 @@ public final class SyncMonitor {
 
     /// The summary shown in Settings.
     public var status: SyncStatus {
-        SyncStatus.summarize(mode: mode, account: account, activity: activity)
+        SyncStatus.summarize(mode: mode, account: account, activity: activity, iCloudEnabledInBuild: iCloudEnabledInBuild)
     }
 
     /// Starts listening and checks the account. Call once.
